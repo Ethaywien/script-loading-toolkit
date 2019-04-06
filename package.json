@@ -1,0 +1,28 @@
+{
+  "name": "script-loading-toolkit",
+  "version": "1.0.0",
+  "description": "A lightweight promise based library for handling asynchronously loading and interacting with external script dependencies.",
+  "main": "index.js",
+  "scripts": {
+    "test": "node_modules/.bin/jest --config jestconfig.json"
+  },
+  "keywords": [
+    "browser",
+    "script",
+    "load",
+    "async",
+    "adapter"
+  ],
+  "author": "Alexander Frick <hello@alfrick.com.au>",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/jest": "^24.0.11",
+    "@typescript-eslint/eslint-plugin": "^1.6.0",
+    "@typescript-eslint/parser": "^1.6.0",
+    "eslint": "^5.16.0",
+    "eslint-plugin-import": "^2.16.0",
+    "jest": "^24.7.1",
+    "ts-jest": "^24.0.2",
+    "typescript": "^3.4.1"
+  }
+}
