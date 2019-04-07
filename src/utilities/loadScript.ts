@@ -12,7 +12,7 @@ export function loadScript(src: string): Promise<void> {
         _script.async = true;
     
         _script.onload = (): void => resolve();
-        _script.onerror = reject;
+        _script.onerror = (e): void => reject(e);
     
         document.head.appendChild(_script);
     });
