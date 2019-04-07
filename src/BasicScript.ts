@@ -3,13 +3,13 @@ import { contextualError } from "./utilities/contextualError";
 import { Constructor } from "./types";
 
 /** 
- * @typedef {Object} ScriptState
+ * @typedef {Object} BasicScriptState
  * @property {boolean} loaded
  * @property {boolean} loading
  * @property {boolean} enabled
  * @property {boolean} errored
  */
-interface ScriptState {
+export interface BasicScriptState {
     [key: string]: boolean;
     enabled: boolean;
     loaded: boolean;
@@ -17,15 +17,47 @@ interface ScriptState {
     errored: boolean;
 };
 
+/** 
+ * @typedef {Object} BasicScript
+ * @property {script} src
+ * @property {boolean} isEnabled
+ * @property {boolean} isLoading
+ * @property {boolean} isLoaded
+ * @property {boolean} isErrored
+ * @property {Function} enable
+ * @property {Function} disable
+ * @property {Function} load
+ * @property {Function} onEnabled
+ * @property {Function} onDisabled
+ * @property {Function} onLoading
+ * @property {Function} onLoaded
+ * @property {Function} onErrored
+ */
+export interface BasicScript {
+    src: string;
+    isEnabled: boolean;
+    isLoading: boolean;
+    isLoaded: boolean;
+    isErrored: boolean;
+    enable(): this;
+    disable(): this;
+    load(): Promise<this>;
+    onEnabled(): void;
+    onDisabled(): void;
+    onLoading(): void;
+    onLoaded(): void;
+    onErrored(): void;
+}
+
 /**
  * Mixin for basic script functionality without asynchronous queueing.
  * 
  * @mixin
  * @param  {TBase} Base
- * @returns {TBase}
+ * @returns {Constructor<BasicScript>}
  */
-export function mixinBasicScript<TBase extends Constructor>(Base: TBase): TBase {
-    return class BasicScript extends Base {
+export function mixinBasicScript<TBase extends Constructor>(Base: TBase): Constructor<BasicScript> & TBase {
+    return class extends Base {
 
         /**
          * Custom error namespace.
@@ -41,9 +73,9 @@ export function mixinBasicScript<TBase extends Constructor>(Base: TBase): TBase 
          * 
          * @protected
          * @property
-         * @type {ScriptState}
+         * @type {BasicScriptState}
          */
-        protected _state: ScriptState = {
+        protected _state: BasicScriptState = {
             enabled: true,
             loaded: false,
             loading: false,
@@ -245,6 +277,9 @@ export function mixinBasicScript<TBase extends Constructor>(Base: TBase): TBase 
 
 /**
  * Basic script loading class without an asynchronous queueing api.
- * @class BasicScript
+ * @class BasicScriptClass
  */
-export const BasicScript = mixinBasicScript(class{});
+export const BasicScript: {
+    new (): BasicScript;
+    prototype: BasicScript;
+} = mixinBasicScript(class{});
