@@ -9,9 +9,11 @@ declare global {
     interface Window { app: express.Express }
 }
 
+const port = 8083;
+
 // Add default test script source to window
-window.testScript = 'http://localhost:8081/test-script.js';
-window.testFailedScript = 'http://localhost:8081/404';
+window.testScript = `http://localhost:${port}/test-script.js`;
+window.testFailedScript = `http://localhost:${port}/404`;
 
 // Create a test server to serve our test javascript files
 const app = express();
@@ -27,7 +29,7 @@ window.app = app;
 let listener: Server;
 
 beforeAll(async (done): Promise<void> => {
-    listener = app.listen(8081, (): void => done());
+    listener = app.listen(port, (): void => done());
 });
 
 afterAll(async (done): Promise<void> => {

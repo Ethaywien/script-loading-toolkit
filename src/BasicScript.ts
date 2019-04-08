@@ -19,33 +19,61 @@ export interface BasicScriptState {
 
 /** 
  * @typedef {Object} BasicScript
- * @property {script} src
- * @property {boolean} isEnabled
- * @property {boolean} isLoading
- * @property {boolean} isLoaded
- * @property {boolean} isErrored
- * @property {Function} enable
- * @property {Function} disable
- * @property {Function} load
- * @property {Function} onEnabled
- * @property {Function} onDisabled
- * @property {Function} onLoading
- * @property {Function} onLoaded
- * @property {Function} onErrored
  */
 export interface BasicScript {
+    /**
+     * Script source as a URL string.
+     * @type {string}
+     */
     src: string;
-    isEnabled: boolean;
-    isLoading: boolean;
-    isLoaded: boolean;
-    isErrored: boolean;
+    /**
+     * Is the script enabled (disabled scripts will not load).
+     * @readonly
+     * @type {boolean}
+     */
+    readonly isEnabled: boolean;
+    /**
+     * Has the script finished loading.
+     * @readonly
+     * @type {boolean}
+     */
+    readonly isLoading: boolean;
+    /**
+     * Is the script loading.
+     * @readonly
+     * @type {boolean}
+     */
+    readonly isLoaded: boolean;
+    /**
+     * Has the script failed to load.
+     * @readonly
+     * @type {boolean}
+     */
+    readonly isErrored: boolean;
+    /**
+     * Enable this script to load.
+     * @returns {this} The instance / itself
+     */
     enable(): this;
+    /**
+     * Disable this script from loading.
+     * @returns {this} The instance / itself
+     */
     disable(): this;
+    /**
+     * Load the script if it is enabled and not previously loaded.
+     * @returns {Promise<this>} A promise that resolves with the instance once loading is complete or rejects if loading fails.
+     */
     load(): Promise<this>;
+    /** Lifecycle callback for loading enabled. */
     onEnabled(): void;
+    /** Lifecycle callback for loading  disabled. */
     onDisabled(): void;
+    /** Lifecycle callback for loading commenced. */
     onLoading(): void;
+    /** Lifecycle callback for loading complete. */
     onLoaded(): void;
+    /** Lifecycle callback for loading errored. */
     onErrored(): void;
 }
 
@@ -57,6 +85,7 @@ export interface BasicScript {
  * @returns {Constructor<BasicScript>}
  */
 export function mixinBasicScript<TBase extends Constructor>(Base: TBase): Constructor<BasicScript> & TBase {
+
     return class extends Base {
 
         /**
@@ -67,6 +96,15 @@ export function mixinBasicScript<TBase extends Constructor>(Base: TBase): Constr
          * @type {string}
          */
         protected _errorNamespace: string = 'BasicScript';
+
+        /**
+         * Promise to track loading completion on subsequent concurrent calls of 'load'.
+         * 
+         * @protected
+         * @property
+         * @type {(Promise<this>?)} Promise that will resolve with this instance when loading is complete.
+         */
+        protected _loadingPromise: Promise<this> | null = null;
 
         /**
          * Internal script loading state.
@@ -81,63 +119,6 @@ export function mixinBasicScript<TBase extends Constructor>(Base: TBase): Constr
             loading: false,
             errored: false
         };
-
-        /**
-         * Script source as a URL string.
-         * 
-         * @public
-         * @property
-         * @type {string}
-         */
-        public src: string = '';
-
-        /**
-         * Is the script enabled (disabled scripts will not load).
-         *
-         * @public
-         * @readonly
-         * @property
-         * @type {boolean}
-         */
-        public get isEnabled(): boolean {
-            return this._state.enabled;
-        }
-
-        /**
-         * Has the script finished loading.
-         *
-         * @public
-         * @readonly
-         * @property
-         * @type {boolean}
-         */
-        public get isLoaded(): boolean {
-            return this._state.loaded;
-        }
-
-        /**
-         * Is the script loading.
-         *
-         * @public
-         * @property
-         * @readonly
-         * @type {boolean}
-         */
-        public get isLoading(): boolean {
-            return this._state.loading;
-        }
-
-        /**
-         * Has the script failed to load.
-         *
-         * @public
-         * @property
-         * @readonly
-         * @type {boolean}
-         */
-        public get isErrored(): boolean {
-            return this._state.errored;
-        }
 
         /**
          * Executed when the script starts loading.
@@ -178,106 +159,97 @@ export function mixinBasicScript<TBase extends Constructor>(Base: TBase): Constr
         
         }
 
-        /**
-         * Enable this script to load.
-         * 
-         * @public
-         * @returns this
-         */
+        public src: string = '';
+        
+        public get isEnabled(): boolean {
+            return this._state.enabled;
+        }
+
+        public get isLoaded(): boolean {
+            return this._state.loaded;
+        }
+
+        public get isLoading(): boolean {
+            return this._state.loading;
+        }
+
+        public get isErrored(): boolean {
+            return this._state.errored;
+        }
+
         public enable(): this {
             this._state.enabled = true;
             this.onEnabled();
             return this;
         }
 
-        /**
-         * Disable this script from loading.
-         * 
-         * @public
-         * @returns this
-         */
         public disable(): this {
             this._state.enabled = false;
             this.onEnabled();
             return this;
         }
 
-        /**
-         * Load the script if it is enabled and not previously loaded.
-         *
-         * @public
-         * @method
-         * @returns {Promise<this>}
-         */
         public async load(): Promise<this> {
-            // If the script is loading or already loaded just return.
-            if (this.isLoaded && !this.isLoading) {
-                return this;
-            }
-
-            // If the script is disabled throw.
+            // If the script is disabled reject.
             if (!this.isEnabled) {
                 throw contextualError(`Could not load disabled script. \n ${this.src}`, this._errorNamespace);
             }
 
-            // Flag the script as loading
-            await this._scriptLoading();
+            // If the script has already loaded return straight away.
+            if (this.isLoaded) {
+                return this;
+            }
             
-            try{
-                // Load the script
-                await loadScript(this.src);
-            } catch(err) {
-                // Flag the script as errored
-                await this._scriptError();
-                throw contextualError(`Error loading ${this.src} `, this._errorNamespace, err);
+            // If it has no source specified throw.
+            if (this.src === '') {
+                throw contextualError(`Could not load script with source of ''.`, this._errorNamespace);
             }
 
-            // Flag the script as loaded
-            await this._scriptLoaded();
+            // If the script is loading return the loading promise.
+            if (this.isLoading && this._loadingPromise) {
+                return this._loadingPromise;
+            }
 
-            return this;
+            // If we have not created a promise to track loading status, do so.
+            if (!this._loadingPromise) {
+                this._loadingPromise = new Promise(async (resolve, reject): Promise<void> => {
+                    // Flag the script as loading
+                    await this._scriptLoading();
+                    
+                    try{
+                        // Load the script
+                        await loadScript(this.src);
+                    } catch(err) {
+                        // Flag the script as errored
+                        await this._scriptError();
+                        reject(contextualError(`Error loading ${this.src} `, this._errorNamespace, err));
+                    }
+
+                    // Flag the script as loaded
+                    await this._scriptLoaded();
+
+                    resolve(this);
+                });
+            }
+
+            return this._loadingPromise;
         }
 
-        /**
-         * Lifecycle callback for loading enabled.
-         * 
-         * @public
-         */
         public onEnabled(): void { }
 
-        /**
-         * Lifecycle callback for loading  disabled.
-         * 
-         * @public
-         */
         public onDisabled(): void { }
 
-        /**
-         * Lifecycle callback for loading commenced.
-         * 
-         * @public
-         */
         public onLoading(): void { }
 
-        /**
-         * Lifecycle callback for loading complete.
-         * 
-         * @public
-         */
         public onLoaded(): void { }
 
-        /**
-         * Lifecycle callback for loading errored.
-         * 
-         * @public
-         */
         public onErrored(): void { }
     };
 }
 
 /**
  * Basic script loading class without an asynchronous queueing api.
- * @class BasicScriptClass
+ * @class BasicScript
  */
 export const BasicScript: {
     new (): BasicScript;

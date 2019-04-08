@@ -11,12 +11,5 @@
             "scripthost",
             "es2015.promise"
         ],
-    },
-    "exclude": [
-        "node_modules",
-        "**/*.spec.ts",
-        "**/__mocks__/*",
-        "test",
-        "dist"
-    ]
+    }
 }

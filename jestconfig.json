@@ -2,6 +2,9 @@
     "roots": [
         "<rootDir>/src"
     ],
+    "globals": {
+        "ts-jest": {"tsConfig": "tsconfig.test.json"}
+    },
     "transform": {
         "^.+\\.(t|j)sx?$": "ts-jest"
     },
