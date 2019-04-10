@@ -3,7 +3,7 @@ export const loadScript = jest.fn().mockImplementation((path): Promise<void> => 
         setTimeout((): void => {
             window.testScriptLoaded = true;
             resolve();
-        }, 10);
+        }, 1);
     } else {
         reject(new Error('Failed loading'));
     }

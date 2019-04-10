@@ -185,7 +185,7 @@ export function mixinBasicScript<TBase extends Constructor>(Base: TBase): Constr
 
         public disable(): this {
             this._state.enabled = false;
-            this.onEnabled();
+            this.onDisabled();
             return this;
         }
 
@@ -222,13 +222,13 @@ export function mixinBasicScript<TBase extends Constructor>(Base: TBase): Constr
                     } catch(err) {
                         // Flag the script as errored
                         await this._scriptError();
-                        reject(contextualError(`Error loading ${this.src} `, this._errorNamespace, err));
+                        return reject(contextualError(`Error loading ${this.src} `, this._errorNamespace, err));
                     }
 
                     // Flag the script as loaded
                     await this._scriptLoaded();
 
-                    resolve(this);
+                    return resolve(this);
                 });
             }
 

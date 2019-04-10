@@ -1,3 +1,4 @@
+import '../../test/globals';
 import { loadScript } from './loadScript';
 
 
