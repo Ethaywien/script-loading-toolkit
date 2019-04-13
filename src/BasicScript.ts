@@ -86,7 +86,7 @@ export interface BasicScript {
  */
 export function mixinBasicScript<TBase extends Constructor>(Base: TBase): Constructor<BasicScript> & TBase {
 
-    return class extends Base {
+    return class extends Base implements BasicScript{
 
         /**
          * Custom error namespace.
