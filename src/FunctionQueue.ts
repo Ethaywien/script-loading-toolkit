@@ -12,9 +12,14 @@ export interface FunctionQueueState {
 };
 
 /** 
- * @typedef {Function} ResolverFunc
+ * @typedef {Function} QueuedFunction
  */
-export type ResolverFunc = <T extends FunctionQueue>(input: T) => Promise<void>;
+export type QueuedFunction = <T extends FunctionQueue>(input: T) => Promise<void>;
+
+/** 
+ * @typedef {Function} QueueableFunction
+ */
+export type QueueableFunction = <T1 extends FunctionQueue, T2>(input: T1) => T2;
 
 /** 
  * @typedef {Object} FunctionQueue
@@ -27,11 +32,6 @@ export interface FunctionQueue {
      */
     readonly isExecuted: boolean;
     /**
-     * Execute all the functions in the queue in order.
-     * @returns {Promise<this>}
-     */
-    execute(): Promise<this>;
-    /**
      * Add the given function to the queue.
      * @param {Function} fnc Function to enqueue. Functions will receive the instance of this class as an argument.
      * @returns {Promise<T>} Resolves with the result of fnc when it is run.
@@ -39,6 +39,11 @@ export interface FunctionQueue {
     enqueue<T>(fnc: (target: this) => T): Promise<T>;
     enqueue<T>(fnc: (target: this) => Promise<T>): Promise<T>;
     enqueue<T>(fnc: (target: this) => T | Promise<T>): Promise<T>;
+    /**
+     * Execute all the functions in the queue in order.
+     * @returns {Promise<this>}
+     */
+    execute(): Promise<this>;
     /** Lifecycle callback for queue execution complete. */
     onExecuted(): void;
 }
@@ -70,7 +75,7 @@ export function mixinFunctionQueue<TBase extends Constructor>(Base: TBase): Cons
          * @property
          * @type {Function[]}
          */
-        protected _queue: ResolverFunc[] = [];
+        protected _queue: QueuedFunction[] = [];
 
         /**
          * Internal queue state
@@ -90,13 +95,13 @@ export function mixinFunctionQueue<TBase extends Constructor>(Base: TBase): Cons
         public enqueue<T>(fnc: (target: this) => Promise<T>): Promise<T>
         public enqueue<T>(fnc: (target: this) => T): Promise<T>
         public enqueue<T>(fnc: (target: this) => T | Promise<T>): Promise<T> {
+            // If argument is not a function, reject
+            if (typeof fnc !== 'function') {
+                throw contextualError(`Cannot enqueue input of type "${typeof fnc}", expected a function.`, this._errorNamespace);
+            }
             return new Promise(async (resolve, reject): Promise<void> => {
-                // If argument is not a function, reject
-                if (typeof fnc !== 'function') {
-                    return reject(contextualError(`Cannot queue input of type ${typeof fnc}, expected function.`, this._errorNamespace));
-                }
                 // Wrap the given function with the resolver.
-                const resolver: ResolverFunc = pipeResolver(fnc, resolve) as ResolverFunc;
+                const resolver: QueuedFunction = pipeResolver(fnc, resolve) as QueuedFunction;
                 // Check if already executed
                 if (this.isExecuted) {
                     // Execute the given function immediatly
@@ -117,7 +122,7 @@ export function mixinFunctionQueue<TBase extends Constructor>(Base: TBase): Cons
             // For each function in the queue.
             for(let i = 0; i < queueLength; i++) {
                 // Remove the function from the queue.
-                const fnc: ResolverFunc | undefined = this._queue.shift();
+                const fnc: QueuedFunction | undefined = this._queue.shift();
                 // Execute the function.
                 fnc && fnc(this);
             }
