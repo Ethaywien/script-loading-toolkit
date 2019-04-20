@@ -1,24 +1,23 @@
 import { mocked } from 'ts-jest/utils';
-import '../test/globals';
-import { mixinBasicScript, BasicScript } from './BasicScript';
+import { BasicScriptMixin, BasicScript } from './BasicScript';
 import { loadScript } from './utilities/loadScript';
+import { testSources } from  '../test/globals';
 
 jest.mock('./utilities/loadScript');
 
-const testScriptSrc = window.testScript;
-const testFailedScriptSrc = window.testFailedScript;
+const { validSrc, notFoundSrc } = testSources;
 
 afterEach((): void => {
     window.testScriptLoaded = false;
     mocked(loadScript).mockClear();
 });
 
-describe('mixinBasicScript', (): void => {
+describe('BasicScriptMixin', (): void => {
     it('Adds BasicScript functionality to given constructor.', (): void => {
         class TestClass {
             public static testProp: string = 'test';
         };
-        const TestMixinClass = mixinBasicScript(TestClass);
+        const TestMixinClass = BasicScriptMixin(TestClass);
         expect(TestMixinClass.testProp).toBe('test');
         expect(typeof TestMixinClass.prototype.enable).toBe('function');
         expect(typeof TestMixinClass.prototype.disable).toBe('function');
@@ -36,41 +35,41 @@ describe('BasicScript', (): void => {
     describe('Properties: ', (): void => {
         describe('#src', (): void => {
             it('Defaults to an empty string.', (): void => {
-                const testBasicScript = new BasicScript();
-                expect(testBasicScript.src).toBe('');
+                const testInstance = new BasicScript();
+                expect(testInstance.src).toBe('');
             });
             it('Can be overridden.', (): void => {
-                const testBasicScript = new BasicScript();
-                testBasicScript.src = 'test';
-                expect(testBasicScript.src).toBe('test');
+                const testInstance = new BasicScript();
+                testInstance.src = 'test';
+                expect(testInstance.src).toBe('test');
             });
         });
 
         describe('#isEnabled', (): void => {
             it('Defaults to true.', (): void => {
-                const testBasicScript = new BasicScript();
-                expect(testBasicScript.isEnabled).toBe(true);
+                const testInstance = new BasicScript();
+                expect(testInstance.isEnabled).toBe(true);
             });
         });
 
         describe('#isLoading', (): void => {
             it('Defaults to false.', (): void => {
-                const testBasicScript = new BasicScript();
-                expect(testBasicScript.isLoading).toBe(false);
+                const testInstance = new BasicScript();
+                expect(testInstance.isLoading).toBe(false);
             });
         });
 
         describe('#isLoaded', (): void => {
             it('Defaults to false.', (): void => {
-                const testBasicScript = new BasicScript();
-                expect(testBasicScript.isLoaded).toBe(false);
+                const testInstance = new BasicScript();
+                expect(testInstance.isLoaded).toBe(false);
             });
         });
 
         describe('#isErrored', (): void => {
             it('Defaults to false.', (): void => {
-                const testBasicScript = new BasicScript();
-                expect(testBasicScript.isErrored).toBe(false);
+                const testInstance = new BasicScript();
+                expect(testInstance.isErrored).toBe(false);
             });
         });
     });
@@ -78,88 +77,88 @@ describe('BasicScript', (): void => {
     describe('Methods: ', (): void => {
         describe('#disable()', (): void => {
             it('Disables the script.', (): void => {
-                const testBasicScript = new BasicScript();
-                testBasicScript.disable();
-                expect(testBasicScript.isEnabled).toBe(false);
+                const testInstance = new BasicScript();
+                testInstance.disable();
+                expect(testInstance.isEnabled).toBe(false);
             });
             it('Can be chained.', (): void => {
-                const testBasicScript = new BasicScript();
-                expect(testBasicScript.disable().isEnabled).toBe(false);
+                const testInstance = new BasicScript();
+                expect(testInstance.disable().isEnabled).toBe(false);
             });
         });
 
         describe('#enable()', (): void => {
             it('Enables the script.', (): void => {
-                const testBasicScript = new BasicScript();
-                testBasicScript.disable();
-                testBasicScript.enable();
-                expect(testBasicScript.isEnabled).toBe(true);
+                const testInstance = new BasicScript();
+                testInstance.disable();
+                testInstance.enable();
+                expect(testInstance.isEnabled).toBe(true);
             });
             it('Can be chained.', (): void => {
-                const testBasicScript = new BasicScript();
-                testBasicScript.disable();
-                expect(testBasicScript.enable().isEnabled).toBe(true);
+                const testInstance = new BasicScript();
+                testInstance.disable();
+                expect(testInstance.enable().isEnabled).toBe(true);
             });
         });
 
         describe('#load()', (): void => {
-            let testBasicScript: BasicScript;
+            let testInstance: BasicScript;
             beforeEach((): void => {
-                testBasicScript = new BasicScript();
-                testBasicScript.src = testScriptSrc;
+                testInstance = new BasicScript();
+                testInstance.src = validSrc;
             });
             it('Rejects if the script is disabled.', (): void => {
-                testBasicScript.disable();
-                expect(testBasicScript.load()).rejects.toThrowError(/disabled script/);
+                testInstance.disable();
+                expect(testInstance.load()).rejects.toThrowError(/disabled script/);
             });
             it('Rejects if no src has been specified.', (): void => {
-                testBasicScript.src = '';
-                expect(testBasicScript.load()).rejects.toThrowError(/source of/);
+                testInstance.src = '';
+                expect(testInstance.load()).rejects.toThrowError(/source of/);
             });
             it('Rejects if loading fails.', (): void => {
-                testBasicScript.src = testFailedScriptSrc;
-                expect(testBasicScript.load()).rejects.toThrowError(/Failed/);
+                testInstance.src = notFoundSrc;
+                expect(testInstance.load()).rejects.toThrowError(/Failed/);
             });
             it('Immediately changes the status to loading.', async (): Promise<void> => {
-                const loading = testBasicScript.load();
-                expect(testBasicScript.isLoading).toBe(true);
-                expect(testBasicScript.isLoaded).toBe(false);
-                expect(testBasicScript.isErrored).toBe(false);
+                const loading = testInstance.load();
+                expect(testInstance.isLoading).toBe(true);
+                expect(testInstance.isLoaded).toBe(false);
+                expect(testInstance.isErrored).toBe(false);
                 await loading;
             });
             it('Resolves with itself when loading is complete.', async (): Promise<void> => {
-                await expect(testBasicScript.load()).resolves.toBe(testBasicScript);
+                await expect(testInstance.load()).resolves.toBe(testInstance);
                 expect(window.testScriptLoaded).toBe(true);
             });
             it('Changes status to loaded when complete.', async (): Promise<void> => {
-                await testBasicScript.load();
-                expect(testBasicScript.isLoading).toBe(false);
-                expect(testBasicScript.isLoaded).toBe(true);
-                expect(testBasicScript.isErrored).toBe(false);
+                await testInstance.load();
+                expect(testInstance.isLoading).toBe(false);
+                expect(testInstance.isLoaded).toBe(true);
+                expect(testInstance.isErrored).toBe(false);
             });
             it('Changes status to errored when loading fails.', async (): Promise<void> => {
-                testBasicScript.src = testFailedScriptSrc;
+                testInstance.src = notFoundSrc;
                 try {
-                    await testBasicScript.load();
+                    await testInstance.load();
                 } catch (e) {};
-                expect(testBasicScript.isLoading).toBe(false);
-                expect(testBasicScript.isLoaded).toBe(false);
-                expect(testBasicScript.isErrored).toBe(true);
+                expect(testInstance.isLoading).toBe(false);
+                expect(testInstance.isLoaded).toBe(false);
+                expect(testInstance.isErrored).toBe(true);
             });
             it('Concurrent calls will not trigger the script to load multiple times.', async (): Promise<void> => {
                 await Promise.all( [
-                    testBasicScript.load(),
-                    testBasicScript.load()
+                    testInstance.load(),
+                    testInstance.load()
                 ]);
                 expect(loadScript).toBeCalledTimes(1);
             });
             it('Resolves and does not try to load again if already loaded.', async (): Promise<void> => {
-                await testBasicScript.load();
+                await testInstance.load();
                 expect(loadScript).toBeCalledTimes(1);
-                expect(testBasicScript.isLoaded).toBe(true);
-                testBasicScript.src = '';
-                const loading = testBasicScript.load();
-                expect(testBasicScript.isLoading).toBe(false);
+                expect(testInstance.isLoaded).toBe(true);
+                testInstance.src = '';
+                const loading = testInstance.load();
+                expect(testInstance.isLoading).toBe(false);
                 await loading;
                 expect(loadScript).toBeCalledTimes(1);
             });
@@ -167,63 +166,63 @@ describe('BasicScript', (): void => {
     });
 
     describe('Lifecycle Methods:', (): void => {
-        let testBasicScript: BasicScript;
+        let testInstance: BasicScript;
         let testMockCallback: () => void;
         beforeEach((): void => {
-            testBasicScript = new BasicScript();
-            testBasicScript.src = testScriptSrc;
+            testInstance = new BasicScript();
+            testInstance.src = validSrc;
             testMockCallback = jest.fn();
         });
 
         describe('#onEnabled', (): void => {
             it('Can be overridden.', (): void => {
                 const testFunc = (): void => {
-                    testBasicScript.onEnabled = testMockCallback;
+                    testInstance.onEnabled = testMockCallback;
                 }
-                testBasicScript.src = testScriptSrc;
+                testInstance.src = validSrc;
                 expect(testFunc).not.toThrow();
-                expect(testBasicScript.onEnabled).toBe(testMockCallback);
+                expect(testInstance.onEnabled).toBe(testMockCallback);
             });
             it('Is called every time the script is enabled.', (): void => {
-                testBasicScript.onEnabled = testMockCallback;
-                testBasicScript.enable();
-                expect(testBasicScript.onEnabled).toBeCalledTimes(1);
-                testBasicScript.enable();
-                expect(testBasicScript.onEnabled).toBeCalledTimes(2);
+                testInstance.onEnabled = testMockCallback;
+                testInstance.enable();
+                expect(testInstance.onEnabled).toBeCalledTimes(1);
+                testInstance.enable();
+                expect(testInstance.onEnabled).toBeCalledTimes(2);
             });
         });
 
         describe('#onDisabled', (): void => {
             it('Can be overridden.', (): void => {
                 const testFunc = (): void => {
-                    testBasicScript.onDisabled = testMockCallback;
+                    testInstance.onDisabled = testMockCallback;
                 }
-                testBasicScript.src = testScriptSrc;
+                testInstance.src = validSrc;
                 expect(testFunc).not.toThrow();
-                expect(testBasicScript.onDisabled).toBe(testMockCallback);
+                expect(testInstance.onDisabled).toBe(testMockCallback);
             });
             it('Is called every time the script is disabled.', (): void => {
-                testBasicScript.onDisabled = testMockCallback;
-                testBasicScript.disable();
-                expect(testBasicScript.onDisabled).toBeCalledTimes(1);
-                testBasicScript.disable();
-                expect(testBasicScript.onDisabled).toBeCalledTimes(2);
+                testInstance.onDisabled = testMockCallback;
+                testInstance.disable();
+                expect(testInstance.onDisabled).toBeCalledTimes(1);
+                testInstance.disable();
+                expect(testInstance.onDisabled).toBeCalledTimes(2);
             });
         });
 
         describe('#onLoading', (): void => {
             it('Can be overridden.', (): void => {
                 const testFunc = (): void => {
-                    testBasicScript.onDisabled = testMockCallback;
+                    testInstance.onDisabled = testMockCallback;
                 }
-                testBasicScript.src = testScriptSrc;
+                testInstance.src = validSrc;
                 expect(testFunc).not.toThrow();
-                expect(testBasicScript.onDisabled).toBe(testMockCallback);
+                expect(testInstance.onDisabled).toBe(testMockCallback);
             });
             it('Is called when the script starts loading.', async (): Promise<void> => {
-                testBasicScript.onLoading = testMockCallback;
-                const loading = testBasicScript.load();
-                expect(testBasicScript.onLoading).toBeCalledTimes(1);
+                testInstance.onLoading = testMockCallback;
+                const loading = testInstance.load();
+                expect(testInstance.onLoading).toBeCalledTimes(1);
                 await loading;
             });
         });
@@ -231,35 +230,35 @@ describe('BasicScript', (): void => {
         describe('#onLoaded', (): void => {
             it('Can be overridden.', (): void => {
                 const testFunc = (): void => {
-                    testBasicScript.onDisabled = testMockCallback;
+                    testInstance.onDisabled = testMockCallback;
                 }
-                testBasicScript.src = testScriptSrc;
+                testInstance.src = validSrc;
                 expect(testFunc).not.toThrow();
-                expect(testBasicScript.onDisabled).toBe(testMockCallback);
+                expect(testInstance.onDisabled).toBe(testMockCallback);
             });
             it('Is called when the script has loaded.', async (): Promise<void> => {
-                testBasicScript.onLoaded = testMockCallback;
-                await testBasicScript.load();
-                expect(testBasicScript.onLoaded).toBeCalledTimes(1);
+                testInstance.onLoaded = testMockCallback;
+                await testInstance.load();
+                expect(testInstance.onLoaded).toBeCalledTimes(1);
             });
         });
 
         describe('#onErrored', (): void => {
             it('Can be overridden.', (): void => {
                 const testFunc = (): void => {
-                    testBasicScript.onDisabled = testMockCallback;
+                    testInstance.onDisabled = testMockCallback;
                 }
-                testBasicScript.src = testScriptSrc;
+                testInstance.src = validSrc;
                 expect(testFunc).not.toThrow();
-                expect(testBasicScript.onDisabled).toBe(testMockCallback);
+                expect(testInstance.onDisabled).toBe(testMockCallback);
             });
             it('Is called when the script has failed to load.', async (): Promise<void> => {
-                testBasicScript.src = testFailedScriptSrc;
-                testBasicScript.onErrored = testMockCallback;
+                testInstance.src = notFoundSrc;
+                testInstance.onErrored = testMockCallback;
                 try {
-                    await testBasicScript.load();
+                    await testInstance.load();
                 } catch (e) {};
-                expect(testBasicScript.onErrored).toBeCalledTimes(1);
+                expect(testInstance.onErrored).toBeCalledTimes(1);
             });
         });
     });

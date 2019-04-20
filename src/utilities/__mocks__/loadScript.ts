@@ -1,5 +1,7 @@
+import { testSources } from  '../../../test/globals';
+
 export const loadScript = jest.fn().mockImplementation((path): Promise<void> => new Promise((resolve, reject): void => {
-    if (path === window.testScript) {
+    if (path === testSources.validSrc) {
         setTimeout((): void => {
             window.testScriptLoaded = true;
             resolve();

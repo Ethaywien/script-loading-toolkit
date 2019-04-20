@@ -1,9 +1,14 @@
-import * as express from 'express';
-
 // Declare globals on the window object for script mocking
+
 declare global {
     interface Window { testScriptLoaded: boolean }
-    interface Window { testScript: string }
-    interface Window { testFailedScript: string }
-    interface Window { app: express.Express }
+}
+
+const port = 7357;
+
+export const testSources = {
+    // @ts-ignore
+    validSrc: `http://localhost:${port}/test-script.js`,
+    // @ts-ignore
+    notFoundSrc: `http://localhost:${port}/404`
 }

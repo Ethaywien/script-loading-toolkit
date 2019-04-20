@@ -1,11 +1,11 @@
-import { mixinFunctionQueue, FunctionQueue, QueuedFunction, QueueableFunction } from './FunctionQueue';
+import { FunctionQueueMixin, FunctionQueue, QueueableFunction } from './FunctionQueue';
 
-describe('mixinFunctionQueue', (): void => {
+describe('FunctionQueueMixin', (): void => {
     it('Adds FunctionQueue functionality to given constructor.', (): void => {
         class TestClass {
             public static testProp: string = 'test';
         };
-        const TestMixinClass = mixinFunctionQueue(TestClass);
+        const TestMixinClass = FunctionQueueMixin(TestClass);
         expect(TestMixinClass.testProp).toBe('test');
         expect(typeof TestMixinClass.prototype.execute).toBe('function');
         expect(typeof TestMixinClass.prototype.enqueue).toBe('function');

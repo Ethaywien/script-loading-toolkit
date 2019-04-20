@@ -11,6 +11,13 @@ export interface FunctionQueueState {
     executed: boolean;
 };
 
+/**
+ * Initial state for function queues.
+ */
+export const initialFunctionQueueState: FunctionQueueState = {
+    executed: false
+};
+
 /** 
  * @typedef {Function} QueuedFunction
  */
@@ -53,12 +60,10 @@ export interface FunctionQueue {
  * 
  * @mixin
  * @param  {TBase} Base
- * @returns {Constructor<FunctionQueue>}
+ * @returns {Constructor<FunctionQueue>} Constructor with mixed in functionality.
  */
-export function mixinFunctionQueue<TBase extends Constructor>(Base: TBase): Constructor<FunctionQueue> & TBase {
-
-    return class extends Base implements FunctionQueue{
-
+export const FunctionQueueMixin = <TBase extends Constructor> (Base: TBase): Constructor<FunctionQueue> & TBase =>
+    class extends Base implements FunctionQueue{
         /**
          * Custom error namespace.
          * 
@@ -84,9 +89,7 @@ export function mixinFunctionQueue<TBase extends Constructor>(Base: TBase): Cons
          * @property
          * @type {Object}
          */
-        protected _state: FunctionQueueState = {
-            executed: false,
-        };
+        protected _state: FunctionQueueState = { ...initialFunctionQueueState };
 
         public get isExecuted(): boolean {
             return this._state.executed;
@@ -135,7 +138,6 @@ export function mixinFunctionQueue<TBase extends Constructor>(Base: TBase): Cons
 
         public onExecuted(): void { }
     };
-}
 
 /**
  * Basic script to enqueue functions and batch execute them in order.
@@ -144,4 +146,4 @@ export function mixinFunctionQueue<TBase extends Constructor>(Base: TBase): Cons
 export const FunctionQueue: {
     new (): FunctionQueue;
     prototype: FunctionQueue;
-} = mixinFunctionQueue(class{});
+} = FunctionQueueMixin(class{});

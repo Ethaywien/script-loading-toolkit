@@ -1,9 +1,7 @@
-import '../../test/globals';
 import { loadScript } from './loadScript';
+import { testSources } from  '../../test/globals';
 
-
-const testScript = window.testScript;
-const testFailedScript = window.testFailedScript;
+const { validSrc, notFoundSrc } = testSources;
 
 describe('loadScript', (): void => {
     beforeEach((): void => {
@@ -11,18 +9,18 @@ describe('loadScript', (): void => {
         document.head.innerHTML = '';
     });
     it('Adds a new script tag with the given source to the page.', (): void => {
-        loadScript(testScript);
+        loadScript(validSrc);
         const scripts = document.getElementsByTagName('script');
         expect(scripts.length).toBe(1);
-        expect(scripts[0].src).toBe(testScript);
+        expect(scripts[0].src).toBe(validSrc);
     });
     it('Adds the script tag with type of text/javascript.', (): void => {
-        loadScript(testScript);
+        loadScript(validSrc);
         const scripts = document.getElementsByTagName('script');
         expect(scripts[0].type).toBe('text/javascript');
     });
     it('Resolves when the script has loaded.', async (): Promise<void> => {
-        await loadScript(testScript);
+        await loadScript(validSrc);
         expect(window.testScriptLoaded).toBe(true);
     });
     it('Rejects on error.', async (): Promise<void> => {
@@ -34,7 +32,7 @@ describe('loadScript', (): void => {
         });
         expect.assertions(2);
         try {
-            await loadScript(testFailedScript);
+            await loadScript(notFoundSrc);
         } catch (err) {
             expect(err).toHaveProperty('message');
             expect(err.message).toMatch('error');

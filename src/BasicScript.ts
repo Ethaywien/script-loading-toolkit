@@ -1,6 +1,6 @@
 import { loadScript } from "./utilities/loadScript";
 import { contextualError } from "./utilities/contextualError";
-import { Constructor } from "./types";
+import { Constructor, Mixin } from "./types";
 
 /** 
  * @typedef {Object} BasicScriptState
@@ -15,6 +15,16 @@ export interface BasicScriptState {
     loaded: boolean;
     loading: boolean; 
     errored: boolean;
+};
+
+/**
+ * Initial state for basic scripts.
+ */
+export const initialBasicScriptState: BasicScriptState = {
+    enabled: true,
+    loaded: false,
+    loading: false,
+    errored: false
 };
 
 /** 
@@ -84,10 +94,8 @@ export interface BasicScript {
  * @param  {TBase} Base
  * @returns {Constructor<BasicScript>}
  */
-export function mixinBasicScript<TBase extends Constructor>(Base: TBase): Constructor<BasicScript> & TBase {
-
-    return class extends Base implements BasicScript{
-
+export const BasicScriptMixin = <TBase extends Constructor>(Base: TBase): Constructor<BasicScript> & TBase =>
+    class extends Base implements BasicScript{
         /**
          * Custom error namespace.
          * 
@@ -113,12 +121,7 @@ export function mixinBasicScript<TBase extends Constructor>(Base: TBase): Constr
          * @property
          * @type {BasicScriptState}
          */
-        protected _state: BasicScriptState = {
-            enabled: true,
-            loaded: false,
-            loading: false,
-            errored: false
-        };
+        protected _state: BasicScriptState = { ...initialBasicScriptState };
 
         /**
          * Executed when the script starts loading.
@@ -245,7 +248,7 @@ export function mixinBasicScript<TBase extends Constructor>(Base: TBase): Constr
 
         public onErrored(): void { }
     };
-}
+
 
 /**
  * Basic script loading class without an asynchronous queueing api.
@@ -254,4 +257,4 @@ export function mixinBasicScript<TBase extends Constructor>(Base: TBase): Constr
 export const BasicScript: {
     new (): BasicScript;
     prototype: BasicScript;
-} = mixinBasicScript(class{});
+} = BasicScriptMixin(class{});
