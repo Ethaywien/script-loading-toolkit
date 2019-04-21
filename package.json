@@ -8,6 +8,8 @@
     "test": "node_modules/.bin/jest --config jestconfig.json"
   },
   "keywords": [
+    "utility",
+    "toolkit",
     "browser",
     "script",
     "load",

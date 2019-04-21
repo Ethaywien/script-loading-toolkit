@@ -72,41 +72,76 @@ describe('BasicScript', (): void => {
                 expect(testInstance.isErrored).toBe(false);
             });
         });
+
+        describe('#hasDependencies', (): void => {
+            it('Defaults to false.', (): void => {
+                const testInstance = new BasicScript();
+                expect(testInstance.hasDependencies).toBe(false);
+            });
+        });
     });
 
     describe('Methods: ', (): void => {
+        let testInstance: BasicScript;
+        beforeEach((): void => {
+            testInstance = new BasicScript();
+            testInstance.src = validSrc;
+        });
+
+        describe('#addDependency()', (): void => {
+            it('Throws if given dependency has no load method.', (): void => {
+                // @ts-ignore: Suppress TS error of invalid input to ensure testing es5 runtime errors.
+                const testFunc = (): void => { testInstance.addDependency({}) };
+                expect(testFunc).toThrowError(/Given object has no 'load' method/);
+            });
+            it('Throws if the load method has already been called.', (): void => {
+                const testFunc = (): void => { testInstance.addDependency(new BasicScript()) };
+                testInstance.load();
+                expect(testFunc).toThrowError(/Script has already started loading/);
+            });
+            it('Optionally accepts a second boolean argument.', (): void => {
+                const testFunc = (): void => { testInstance.addDependency(new BasicScript()) };
+                const testFunc2 = (): void => { testInstance.addDependency(new BasicScript(), true) };
+                expect(testFunc).not.toThrow();
+                expect(testFunc2).not.toThrow();
+            });
+            it('Will change "hasDependencies" to be true".', (): void => {
+                const testInstance2 = new BasicScript();
+                testInstance.addDependency(testInstance2);
+                expect(testInstance.hasDependencies).toBe(true);
+                expect(testInstance2.hasDependencies).toBe(false);
+                testInstance2.addDependency(new BasicScript(), true);
+                expect(testInstance2.hasDependencies).toBe(true);
+            });
+            it('Can be chained.', (): void => {
+                const testFunc = (): void => { testInstance.addDependency(new BasicScript()).addDependency(new BasicScript()) };
+                expect(testFunc).not.toThrow();
+            });
+        });
+
         describe('#disable()', (): void => {
             it('Disables the script.', (): void => {
-                const testInstance = new BasicScript();
                 testInstance.disable();
                 expect(testInstance.isEnabled).toBe(false);
             });
             it('Can be chained.', (): void => {
-                const testInstance = new BasicScript();
                 expect(testInstance.disable().isEnabled).toBe(false);
             });
         });
 
         describe('#enable()', (): void => {
             it('Enables the script.', (): void => {
-                const testInstance = new BasicScript();
                 testInstance.disable();
                 testInstance.enable();
                 expect(testInstance.isEnabled).toBe(true);
             });
             it('Can be chained.', (): void => {
-                const testInstance = new BasicScript();
                 testInstance.disable();
                 expect(testInstance.enable().isEnabled).toBe(true);
             });
         });
 
         describe('#load()', (): void => {
-            let testInstance: BasicScript;
-            beforeEach((): void => {
-                testInstance = new BasicScript();
-                testInstance.src = validSrc;
-            });
             it('Rejects if the script is disabled.', (): void => {
                 testInstance.disable();
                 expect(testInstance.load()).rejects.toThrowError(/disabled script/);
@@ -145,7 +180,7 @@ describe('BasicScript', (): void => {
                 expect(testInstance.isLoaded).toBe(false);
                 expect(testInstance.isErrored).toBe(true);
             });
-            it('Concurrent calls will not trigger the script to load multiple times.', async (): Promise<void> => {
+            it('Will not trigger the script to load multiple times if called concurrently.', async (): Promise<void> => {
                 await Promise.all( [
                     testInstance.load(),
                     testInstance.load()
@@ -161,6 +196,23 @@ describe('BasicScript', (): void => {
                 expect(testInstance.isLoading).toBe(false);
                 await loading;
                 expect(loadScript).toBeCalledTimes(1);
+            });
+            it('Will trigger loading of added dependencies.', async (): Promise<void> => {
+                const testDependency = new BasicScript();
+                const testSpy = jest.spyOn(testDependency, 'load');
+                testDependency.src = validSrc;
+                testInstance.addDependency(testDependency);
+                testInstance.load();
+                expect(testSpy).toBeCalledTimes(1);
+            });
+            it('May start loading before dependencies without side effects have loaded.', async (): Promise<void> => {
+                
+            });
+            it('Will not finish loading until added dependencies have also loaded.', async (): Promise<void> => {
+                
+            });
+            it('Will not begin loading until dependencies with side effect have finished loading.', async (): Promise<void> => {
+                
             });
         });
     });

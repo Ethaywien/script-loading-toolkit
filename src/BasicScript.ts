@@ -1,6 +1,6 @@
 import { loadScript } from "./utilities/loadScript";
 import { contextualError } from "./utilities/contextualError";
-import { Constructor, Mixin } from "./types";
+import { Constructor } from "./types";
 
 /** 
  * @typedef {Object} BasicScriptState
@@ -61,6 +61,22 @@ export interface BasicScript {
      */
     readonly isErrored: boolean;
     /**
+     * Does the script have dependencies.
+     * @readonly
+     * @type {boolean}
+     */
+    readonly hasDependencies: boolean;
+
+
+    /**
+     * Add a dependency script that will be loaded along with this script.
+     * @param dependency - The script to load.
+     * @param [sideEffects=false] - Flag if the dependency has side effects that must be in place for this script loads.
+     * @returns {this}  The instance / itself
+     */
+    addDependency(dependency: BasicScript, sideEffects?: boolean): this;
+
+    /**
      * Enable this script to load.
      * @returns {this} The instance / itself
      */
@@ -106,6 +122,27 @@ export const BasicScriptMixin = <TBase extends Constructor>(Base: TBase): Constr
         protected _errorNamespace: string = 'BasicScript';
 
         /**
+         * Array to store dependencies that should load with this script
+         * @property
+         * @type {BasicScript[]}
+         */
+        protected _softDependencies: BasicScript[] = [];
+        
+        /**
+         * Array to store hard dependencies that should load before this script
+         * @property
+         * @type {BasicScript[]}
+         */
+        protected _hardDependencies: BasicScript[] = [];
+
+        /**
+         * Array to store loading promise of dependency scripts
+         * @property
+         * @type {Promise<BasicScript>[]}
+         */
+        protected _loadingDependencies: Promise<BasicScript>[] = [];
+
+        /**
          * Promise to track loading completion on subsequent concurrent calls of 'load'.
          * 
          * @protected
@@ -124,42 +161,86 @@ export const BasicScriptMixin = <TBase extends Constructor>(Base: TBase): Constr
         protected _state: BasicScriptState = { ...initialBasicScriptState };
 
         /**
+         * True if any hard dependencies have been added.
+         * 
+         * @protected
+         * @property
+         * @type {boolean}
+         */
+        protected get _hasHardDependencies(): boolean {
+            return !!this._hardDependencies.length;
+        }
+        /**
+         * True if any soft dependencies have been added.
+         * 
+         * @protected
+         * @property
+         * @type {boolean}
+         */
+        protected get _hasSoftDependencies(): boolean {
+            return !!this._softDependencies.length;
+        }
+
+        /**
+         * Trigger dependencies of this script to load and waits for hard dependencies to finish.
+         *
+         * @protected
+         * @returns {Promise<void>}
+         */
+        protected async _loadDependencies(): Promise<void> {
+            const loader = (dependency: BasicScript): Promise<BasicScript> => dependency.load();
+            let loadingHardDependencies: Promise<BasicScript>[] = [];
+            
+            // Start hard dependencies loading
+            if (this._hasHardDependencies) {
+                loadingHardDependencies = this._hardDependencies.map(loader);
+            }
+            // Start soft dependencies loading
+            if (this._hasSoftDependencies) {
+                this._loadingDependencies = this._softDependencies.map(loader);
+            }
+            // Wait for hard dependencies to finish
+            if (this._hasHardDependencies) {
+                await Promise.all(loadingHardDependencies);
+            }
+        }
+
+        /**
          * Executed when the script starts loading.
          *
          * @protected
-         * @returns {Promise<this>}
+         * @returns {Promise<void>}
          */
-        protected async _scriptLoading(): Promise<this> {
+        protected async _scriptLoading(): Promise<void> {
             this._state.loading = true;
             this.onLoading();
-            return this;
         }
 
         /**
          * Executed after the script has loaded.
          *
          * @protected
-         * @returns {Promise<this>}
+         * @returns {Promise<void>}
          */
-        protected async _scriptLoaded(): Promise<this> {
+        protected async _scriptLoaded(): Promise<void> {
+            if (this._hasSoftDependencies) {
+                await Promise.all(this._loadingDependencies);
+            }
             this._state.loading = false;
             this._state.loaded = true;
             this.onLoaded();
-            return this;
         }
 
         /**
          * Executed after the script has thrown an error while loading.
          *
          * @protected
-         * @returns {Promise<this>}
+         * @returns {Promise<void>}
          */
-        protected async _scriptError(): Promise<this> {
+        protected async _scriptError(): Promise<void> {
             this._state.loading = false;
             this._state.errored = true;
             this.onErrored();
-            return this;
-        
         }
 
         public src: string = '';
@@ -178,6 +259,30 @@ export const BasicScriptMixin = <TBase extends Constructor>(Base: TBase): Constr
 
         public get isErrored(): boolean {
             return this._state.errored;
+        }
+
+        public get hasDependencies(): boolean {
+            return this._hasHardDependencies || this._hasSoftDependencies;
+        }
+
+        public addDependency(dependency: BasicScript, hasSideffects: boolean = false): this {
+            // If the script has already loaded throw.
+            if (this.isLoaded || this.isLoading) {
+                throw contextualError(`Error adding dependency. Script has already started loading.`, this._errorNamespace);
+            }
+            // If the given dependency is not a script throw.
+            if (typeof dependency.load !== 'function') {
+                throw contextualError(`Error adding dependency. Given object has no 'load' method.`, this._errorNamespace);
+            }
+            // If the dependency has side effects:
+            if (hasSideffects) {
+                // Add as a hard dependency.
+                this._hardDependencies.push(dependency);
+            } else {
+                // Otherwise add as a normal dependency.
+                this._softDependencies.push(dependency);
+            }
+            return this;
         }
 
         public enable(): this {
@@ -220,6 +325,9 @@ export const BasicScriptMixin = <TBase extends Constructor>(Base: TBase): Constr
                     await this._scriptLoading();
                     
                     try{
+                        // Start dependencies loading
+                        await this._loadDependencies();
+
                         // Load the script
                         await loadScript(this.src);
                     } catch(err) {

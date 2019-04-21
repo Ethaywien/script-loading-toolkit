@@ -44,6 +44,15 @@ export interface Script extends FunctionQueue, BasicScript, ScriptInitializer {}
 export const ScriptInitializerMixin = <TBase extends Constructor<BasicScript & FunctionQueue>>(Base: TBase): Constructor<ScriptInitializer> & TBase =>
     class extends Base implements ScriptInitializer{
         /**
+         * Custom error namespace.
+         * 
+         * @protected
+         * @property
+         * @type {string}
+         */
+        protected _errorNamespace: string = 'Script';
+
+        /**
          * Internal script state.
          * 
          * @protected
