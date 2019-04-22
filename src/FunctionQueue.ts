@@ -50,9 +50,9 @@ export interface FunctionQueue {
      * Execute all the functions in the queue in order.
      * @returns {Promise<this>}
      */
-    execute(): Promise<this>;
+    execute: () => Promise<this>;
     /** Lifecycle callback for queue execution complete. */
-    onExecuted(): void;
+    onExecuted: () => void;
 }
 
 /**
@@ -102,7 +102,7 @@ export const FunctionQueueMixin = <TBase extends Constructor> (Base: TBase): Con
             if (typeof fnc !== 'function') {
                 throw contextualError(`Cannot enqueue input of type "${typeof fnc}", expected a function.`, this._errorNamespace);
             }
-            return new Promise(async (resolve, reject): Promise<void> => {
+            return new Promise(async (resolve): Promise<void> => {
                 // Wrap the given function with the resolver.
                 const resolver: QueuedFunction = pipeResolver(fnc, resolve) as QueuedFunction;
                 // Check if already executed

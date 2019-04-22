@@ -3,7 +3,7 @@
  * @param  {any[]} ...args
  * @returns {T}
  */
-export type Constructor<T = {}> = new (...args: any[]) => T;
+export type Constructor<T = object> = new (...args: any[]) => T;
 
 /**
  * @typedef {Function} AnyFunction

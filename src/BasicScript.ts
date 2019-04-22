@@ -1,6 +1,6 @@
 import { loadScript } from "./utilities/loadScript";
 import { contextualError } from "./utilities/contextualError";
-import { Constructor } from "./types";
+import { Constructor, Mixin } from "./types";
 
 /** 
  * @typedef {Object} BasicScriptState
@@ -27,91 +27,16 @@ export const initialBasicScriptState: BasicScriptState = {
     errored: false
 };
 
-/** 
- * @typedef {Object} BasicScript
- */
-export interface BasicScript {
-    /**
-     * Script source as a URL string.
-     * @type {string}
-     */
-    src: string;
-    /**
-     * Is the script enabled (disabled scripts will not load).
-     * @readonly
-     * @type {boolean}
-     */
-    readonly isEnabled: boolean;
-    /**
-     * Has the script finished loading.
-     * @readonly
-     * @type {boolean}
-     */
-    readonly isLoading: boolean;
-    /**
-     * Is the script loading.
-     * @readonly
-     * @type {boolean}
-     */
-    readonly isLoaded: boolean;
-    /**
-     * Has the script failed to load.
-     * @readonly
-     * @type {boolean}
-     */
-    readonly isErrored: boolean;
-    /**
-     * Does the script have dependencies.
-     * @readonly
-     * @type {boolean}
-     */
-    readonly hasDependencies: boolean;
-
-
-    /**
-     * Add a dependency script that will be loaded along with this script.
-     * @param dependency - The script to load.
-     * @param [sideEffects=false] - Flag if the dependency has side effects that must be in place for this script loads.
-     * @returns {this}  The instance / itself
-     */
-    addDependency(dependency: BasicScript, sideEffects?: boolean): this;
-
-    /**
-     * Enable this script to load.
-     * @returns {this} The instance / itself
-     */
-    enable(): this;
-    /**
-     * Disable this script from loading.
-     * @returns {this} The instance / itself
-     */
-    disable(): this;
-    /**
-     * Load the script if it is enabled and not previously loaded.
-     * @returns {Promise<this>} A promise that resolves with the instance once loading is complete or rejects if loading fails.
-     */
-    load(): Promise<this>;
-    /** Lifecycle callback for loading enabled. */
-    onEnabled(): void;
-    /** Lifecycle callback for loading  disabled. */
-    onDisabled(): void;
-    /** Lifecycle callback for loading commenced. */
-    onLoading(): void;
-    /** Lifecycle callback for loading complete. */
-    onLoaded(): void;
-    /** Lifecycle callback for loading errored. */
-    onErrored(): void;
-}
-
 /**
  * Mixin for basic script functionality without asynchronous queueing.
  * 
  * @mixin
- * @param  {TBase} Base
- * @returns {Constructor<BasicScript>}
+ * @param  {TBase} Base - Class to extend
+ * @returns {Constructor<BasicScript>} Class with BasicScript mixin functionality
  */
-export const BasicScriptMixin = <TBase extends Constructor>(Base: TBase): Constructor<BasicScript> & TBase =>
-    class extends Base implements BasicScript{
+export const BasicScriptMixin = <TBase extends Constructor>(Base: TBase) => 
+    class BasicScriptMixin extends Base {
+
         /**
          * Custom error namespace.
          * 
@@ -119,28 +44,25 @@ export const BasicScriptMixin = <TBase extends Constructor>(Base: TBase): Constr
          * @property
          * @type {string}
          */
-        protected _errorNamespace: string = 'BasicScript';
-
+        _errorNamespace: string = 'BasicScript';
         /**
          * Array to store dependencies that should load with this script
          * @property
          * @type {BasicScript[]}
          */
-        protected _softDependencies: BasicScript[] = [];
-        
+        _softDependencies: BasicScript[] = [];
         /**
          * Array to store hard dependencies that should load before this script
          * @property
          * @type {BasicScript[]}
          */
-        protected _hardDependencies: BasicScript[] = [];
-
+        _hardDependencies: BasicScript[] = [];
         /**
          * Array to store loading promise of dependency scripts
          * @property
          * @type {Promise<BasicScript>[]}
          */
-        protected _loadingDependencies: Promise<BasicScript>[] = [];
+        _loadingDependencies: Promise<BasicScript>[] = [];
 
         /**
          * Promise to track loading completion on subsequent concurrent calls of 'load'.
@@ -149,8 +71,7 @@ export const BasicScriptMixin = <TBase extends Constructor>(Base: TBase): Constr
          * @property
          * @type {(Promise<this>?)} Promise that will resolve with this instance when loading is complete.
          */
-        protected _loadingPromise: Promise<this> | null = null;
-
+        _loadingPromise: Promise<this> | null = null;
         /**
          * Internal script loading state.
          * 
@@ -158,7 +79,7 @@ export const BasicScriptMixin = <TBase extends Constructor>(Base: TBase): Constr
          * @property
          * @type {BasicScriptState}
          */
-        protected _state: BasicScriptState = { ...initialBasicScriptState };
+        _state: BasicScriptState = { ...initialBasicScriptState };
 
         /**
          * True if any hard dependencies have been added.
@@ -167,7 +88,7 @@ export const BasicScriptMixin = <TBase extends Constructor>(Base: TBase): Constr
          * @property
          * @type {boolean}
          */
-        protected get _hasHardDependencies(): boolean {
+        get _hasHardDependencies(): boolean {
             return !!this._hardDependencies.length;
         }
         /**
@@ -177,17 +98,16 @@ export const BasicScriptMixin = <TBase extends Constructor>(Base: TBase): Constr
          * @property
          * @type {boolean}
          */
-        protected get _hasSoftDependencies(): boolean {
+        get _hasSoftDependencies(): boolean {
             return !!this._softDependencies.length;
         }
-
         /**
          * Trigger dependencies of this script to load and waits for hard dependencies to finish.
          *
          * @protected
          * @returns {Promise<void>}
          */
-        protected async _loadDependencies(): Promise<void> {
+        async _loadDependencies(): Promise<void> {
             const loader = (dependency: BasicScript): Promise<BasicScript> => dependency.load();
             let loadingHardDependencies: Promise<BasicScript>[] = [];
             
@@ -204,25 +124,23 @@ export const BasicScriptMixin = <TBase extends Constructor>(Base: TBase): Constr
                 await Promise.all(loadingHardDependencies);
             }
         }
-
         /**
          * Executed when the script starts loading.
          *
          * @protected
          * @returns {Promise<void>}
          */
-        protected async _scriptLoading(): Promise<void> {
+        async _scriptLoading(): Promise<void> {
             this._state.loading = true;
             this.onLoading();
         }
-
         /**
          * Executed after the script has loaded.
          *
          * @protected
          * @returns {Promise<void>}
          */
-        protected async _scriptLoaded(): Promise<void> {
+        async _scriptLoaded(): Promise<void> {
             if (this._hasSoftDependencies) {
                 await Promise.all(this._loadingDependencies);
             }
@@ -230,42 +148,71 @@ export const BasicScriptMixin = <TBase extends Constructor>(Base: TBase): Constr
             this._state.loaded = true;
             this.onLoaded();
         }
-
         /**
          * Executed after the script has thrown an error while loading.
          *
          * @protected
          * @returns {Promise<void>}
          */
-        protected async _scriptError(): Promise<void> {
+        async _scriptError(): Promise<void> {
             this._state.loading = false;
             this._state.errored = true;
             this.onErrored();
         }
 
-        public src: string = '';
-        
-        public get isEnabled(): boolean {
+        /**
+         * Script source as a URL string.
+         * @type {string}
+         */
+        src: string = '';
+        /**
+         * Is the script enabled (disabled scripts will not load).
+         * @readonly
+         * @type {boolean}
+         */    
+        get isEnabled(): boolean {
             return this._state.enabled;
         }
-
-        public get isLoaded(): boolean {
+        /**
+         * Has the script finished loading.
+         * @readonly
+         * @type {boolean}
+         */    
+        get isLoaded(): boolean {
             return this._state.loaded;
         }
-
-        public get isLoading(): boolean {
+        /**
+         * Is the script loading.
+         * @readonly
+         * @type {boolean}
+         */
+        get isLoading(): boolean {
             return this._state.loading;
         }
-
-        public get isErrored(): boolean {
+        /**
+         * Has the script failed to load.
+         * @readonly
+         * @type {boolean}
+         */
+        get isErrored(): boolean {
             return this._state.errored;
         }
-
-        public get hasDependencies(): boolean {
+        /**
+         * Does the script have dependencies.
+         * @readonly
+         * @type {boolean}
+         */
+        get hasDependencies(): boolean {
             return this._hasHardDependencies || this._hasSoftDependencies;
         }
 
-        public addDependency(dependency: BasicScript, hasSideffects: boolean = false): this {
+        /**
+         * Add a dependency script that will be loaded along with this script.
+         * @param dependency - The script to load.
+         * @param [sideEffects=false] - Flag if the dependency has side effects that must be in place for this script loads.
+         * @returns {this}  The instance / itself
+         */
+        addDependency(dependency: BasicScript, hasSideffects: boolean = false): this {
             // If the script has already loaded throw.
             if (this.isLoaded || this.isLoading) {
                 throw contextualError(`Error adding dependency. Script has already started loading.`, this._errorNamespace);
@@ -284,20 +231,29 @@ export const BasicScriptMixin = <TBase extends Constructor>(Base: TBase): Constr
             }
             return this;
         }
-
-        public enable(): this {
+        /**
+         * Enable this script to load.
+         * @returns {this} The instance / itself
+         */
+        enable(): this {
             this._state.enabled = true;
             this.onEnabled();
             return this;
         }
-
-        public disable(): this {
+        /**
+         * Disable this script from loading.
+         * @returns {this} The instance / itself
+         */
+        disable(): this {
             this._state.enabled = false;
             this.onDisabled();
             return this;
         }
-
-        public async load(): Promise<this> {
+        /**
+         * Load the script if it is enabled and not previously loaded.
+         * @returns {Promise<this>} A promise that resolves with the instance once loading is complete or rejects if loading fails.
+         */
+        async load(): Promise<this> {
             // If the script is disabled reject.
             if (!this.isEnabled) {
                 throw contextualError(`Could not load disabled script. \n ${this.src}`, this._errorNamespace);
@@ -345,24 +301,22 @@ export const BasicScriptMixin = <TBase extends Constructor>(Base: TBase): Constr
 
             return this._loadingPromise;
         }
-
-        public onEnabled(): void { }
-
-        public onDisabled(): void { }
-
-        public onLoading(): void { }
-
-        public onLoaded(): void { }
-
-        public onErrored(): void { }
+        /** Lifecycle callback for loading enabled. */
+        onEnabled(): void { }
+        /** Lifecycle callback for loading  disabled. */
+        onDisabled(): void { }
+        /** Lifecycle callback for loading commenced. */
+        onLoading(): void { }
+        /** Lifecycle callback for loading complete. */
+        onLoaded(): void { }
+        /** Lifecycle callback for loading errored. */
+        onErrored(): void { }
     };
 
-
+export type BasicScriptMixin = Mixin<typeof BasicScriptMixin>;
 /**
  * Basic script loading class without an asynchronous queueing api.
  * @class BasicScript
  */
-export const BasicScript: {
-    new (): BasicScript;
-    prototype: BasicScript;
-} = BasicScriptMixin(class{});
+export const BasicScript = BasicScriptMixin(class{});
+export type BasicScript = InstanceType<typeof BasicScript>

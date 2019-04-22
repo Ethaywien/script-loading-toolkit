@@ -50,7 +50,7 @@ export const ScriptInitializerMixin = <TBase extends Constructor<BasicScript & F
          * @property
          * @type {string}
          */
-        protected _errorNamespace: string = 'Script';
+        _errorNamespace: string = 'Script';
 
         /**
          * Internal script state.
@@ -59,9 +59,20 @@ export const ScriptInitializerMixin = <TBase extends Constructor<BasicScript & F
          * @property
          * @type {ScriptState}
          */
-        protected _state: ScriptState = { ...initialScriptState };
+        _state: ScriptState = { ...initialScriptState };
 
-        public get isInitialized(): boolean {
+        /**
+         * Executed after the script has loaded. Triggers initialization operations.
+         *
+         * @protected
+         * @returns {Promise<QueuedScript>}
+         */
+        async _scriptLoaded(): Promise<void> {
+            await super._scriptLoaded();
+            //return await this.something();
+        }
+
+        get isInitialized(): boolean {
             return this._state.initialized;
         }
     };
