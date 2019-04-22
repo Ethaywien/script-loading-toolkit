@@ -202,17 +202,9 @@ describe('BasicScript', (): void => {
                 const testSpy = jest.spyOn(testDependency, 'load');
                 testDependency.src = validSrc;
                 testInstance.addDependency(testDependency);
-                testInstance.load();
+                await testInstance.load();
                 expect(testSpy).toBeCalledTimes(1);
-            });
-            it('May start loading before dependencies without side effects have loaded.', async (): Promise<void> => {
-                
-            });
-            it('Will not finish loading until added dependencies have also loaded.', async (): Promise<void> => {
-                
-            });
-            it('Will not begin loading until dependencies with side effect have finished loading.', async (): Promise<void> => {
-                
+                expect(loadScript).toBeCalledTimes(2);
             });
         });
     });
@@ -314,5 +306,58 @@ describe('BasicScript', (): void => {
             });
         });
     });
-
+    describe('Dependency Loading: ', (): void => {
+        let testInstance: BasicScript;
+        let testResolver: Function;
+        let testDependency: BasicScript;
+        let testPromise: Promise<void>;
+        let testSpy: jest.Mock<Promise<BasicScript>>;
+        beforeEach((): void => {
+            testInstance = new BasicScript();
+            testInstance.src = validSrc;
+            testDependency = new BasicScript();
+            testPromise = new Promise((resolve): void => {
+                testResolver = resolve;
+            });
+            // @ts-ignore: Suppress error on mock load implementation.
+            testSpy = jest.spyOn(testDependency, 'load').mockImplementation((): Promise<BasicScript> => testPromise);
+        });
+        it('May start loading before dependencies without side effects have loaded.', async (done): Promise<void> => {
+            testInstance.addDependency(testDependency);
+            testInstance.load();
+            setTimeout(async (): Promise<void> => {
+                expect(testSpy).toBeCalledTimes(1);
+                expect(loadScript).toBeCalledWith(validSrc);
+                expect(loadScript).toBeCalledTimes(1);
+                testResolver();
+                await testInstance.load();
+                done();
+            }, 10);
+        });
+        it('Will not finish loading until added dependencies have also loaded.', async (done): Promise<void> => {
+            testInstance.addDependency(testDependency);
+            testInstance.load();
+            setTimeout(async (): Promise<void> => {
+                expect(testInstance.isLoading).toBe(true);
+                expect(testInstance.isLoaded).toBe(false);
+                expect(window.testScriptLoaded).toBe(true);
+                testResolver();
+                setTimeout(async (): Promise<void> => {
+                    expect(testInstance.isLoaded).toBe(true);
+                    done();
+                }, 1);
+            }, 10);
+        });
+        it('Will not begin loading until dependencies with side effect have finished loading.', async (done): Promise<void> => {
+            testInstance.addDependency(testDependency, true);
+            testInstance.load();
+            setTimeout(async (): Promise<void> => {
+                expect(loadScript).toBeCalledTimes(0);
+                testResolver();
+                await testInstance.load();
+                expect(loadScript).toBeCalledTimes(1);
+                done();
+            }, 10);
+        });
+    });
 });
