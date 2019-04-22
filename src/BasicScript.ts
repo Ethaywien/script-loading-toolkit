@@ -32,10 +32,10 @@ export const initialBasicScriptState: BasicScriptState = {
  * 
  * @mixin
  * @param  {TBase} Base - Class to extend
- * @returns {Constructor<BasicScript>} Class with BasicScript mixin functionality
+ * @returns {Constructor<BasicScript & TBase>} Class with BasicScript mixin functionality
  */
 export const BasicScriptMixin = <TBase extends Constructor>(Base: TBase) => 
-    class BasicScriptMixin extends Base {
+    class BasicScript extends Base {
 
         /**
          * Custom error namespace.
@@ -312,11 +312,13 @@ export const BasicScriptMixin = <TBase extends Constructor>(Base: TBase) =>
         /** Lifecycle callback for loading errored. */
         onErrored(): void { }
     };
-
 export type BasicScriptMixin = Mixin<typeof BasicScriptMixin>;
+
+/** Builder for BasicScript */
+const BasicScriptBuilder = (Base = class BasicScript {}): Constructor<BasicScriptMixin> => BasicScriptMixin(Base);
+
 /**
  * Basic script loading class without an asynchronous queueing api.
  * @class BasicScript
  */
-export const BasicScript = BasicScriptMixin(class{});
-export type BasicScript = InstanceType<typeof BasicScript>
+export class BasicScript extends BasicScriptBuilder() {}

@@ -1,4 +1,4 @@
-import { Constructor } from './types';
+import { Constructor, Mixin } from './types';
 import { FunctionQueue, FunctionQueueMixin, FunctionQueueState, initialFunctionQueueState } from './FunctionQueue';
 import { BasicScript, BasicScriptMixin, BasicScriptState, initialBasicScriptState } from './BasicScript';
 
@@ -23,26 +23,14 @@ export const initialScriptState: ScriptState = {
 };
 
 /**
- * @typedef {Object} ScriptInitializer
- */
-export interface ScriptInitializer {
-    isInitialized: boolean;
-}
-
-/** 
- * @typedef {Object} Script
- */
-export interface Script extends FunctionQueue, BasicScript, ScriptInitializer {}
-
-/**
  * Mixin to add initialization callbacks to classes with BasicScript and FunctionQueue apis.
  * 
  * @mixin
  * @param  {TBase} Base
  * @returns {Constructor<Script>}
  */
-export const ScriptInitializerMixin = <TBase extends Constructor<BasicScript & FunctionQueue>>(Base: TBase): Constructor<ScriptInitializer> & TBase =>
-    class extends Base implements ScriptInitializer{
+export const ScriptInitializerMixin = <TBase extends Constructor<BasicScript & FunctionQueue>>(Base: TBase) =>
+    class Script extends Base {
         /**
          * Custom error namespace.
          * 
@@ -76,15 +64,17 @@ export const ScriptInitializerMixin = <TBase extends Constructor<BasicScript & F
             return this._state.initialized;
         }
     };
+export type ScriptInitializerMixin = Mixin<typeof ScriptInitializerMixin>;
 
-export const ScriptMixin = <TBase extends Constructor>(Base: TBase): Constructor<Script> & TBase =>
+export const ScriptMixin = <TBase extends Constructor>(Base: TBase) =>
     ScriptInitializerMixin(BasicScriptMixin(FunctionQueueMixin(Base)));
 
+export type ScriptMixin = Mixin<typeof ScriptMixin>;
+
+/** Builder for Script */
+const ScriptBuilder = (Base = class Script {}): Constructor<ScriptMixin> => ScriptMixin(Base);
 /**
  * Script loading class with asynchronous queueing api.
  * @class Script
  */
-export const Script: {
-    new (): Script;
-    prototype: Script;
-} = ScriptMixin(class{});
+export class Script extends ScriptBuilder() {}
