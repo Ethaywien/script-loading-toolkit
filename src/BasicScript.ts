@@ -31,8 +31,8 @@ export const initialBasicScriptState: BasicScriptState = {
  * Mixin for basic script functionality without asynchronous queueing.
  * 
  * @mixin
- * @param  {TBase} Base - Class to extend
- * @returns {Constructor<BasicScript & TBase>} Class with BasicScript mixin functionality
+ * @param  {TBase} Base - Constructor to extend.
+ * @returns {Constructor<BasicScript & TBase>} Constructor with mixed in functionality.
  */
 export const BasicScriptMixin = <TBase extends Constructor>(Base: TBase) => 
     class BasicScript extends Base {

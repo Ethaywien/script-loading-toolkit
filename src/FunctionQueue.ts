@@ -29,7 +29,7 @@ export type QueueableFunction = <T1 extends FunctionQueue, T2>(input: T1) => T2;
  * Mixin for function queueing functionality.
  * 
  * @mixin
- * @param  {TBase} Base
+ * @param  {TBase} Base - Constructor to extend.
  * @returns {Constructor<FunctionQueue & TBase>} Constructor with mixed in functionality.
  */
 export const FunctionQueueMixin = <TBase extends Constructor> (Base: TBase) =>
