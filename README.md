@@ -1,8 +1,9 @@
 # Script Loading Toolkit
-A browser library for handling asynchronously loading third party script dependencies without race conditions or render blocking. Written in TypeScript. 
+A browser library for handling asynchronously loading and interacting with third party script dependencies without race conditions or render blocking. Written in TypeScript. 
 
 ## Installation
-For EcmaScript and CommonJS module distributions install with NPM (Recommended)
+***TODO, not yet published! watch this space.***
+For EcmaScript and CommonJS module distributions install with the package manager of your choice. (Recommended)
 
 ```sh
 npm install script-loading-toolkit --save
@@ -17,14 +18,14 @@ or include the UMD browser distribution directly:
 **IMPORTANT:** Script Loading Toolkit requires **Promises**. If you wish to support older browsers that do not implement promises then you will need to pollyfill this functionality yourself. You can do so with this [NPM library](https://www.npmjs.com/package/promise-polyfill) or with [Babel](https://babeljs.io/docs/en/babel-polyfill).
 
 ## Usage
-The script loading toolkit provides three major tools (Script, BasicScript and FunctionQueue) for managing script loading. These can be used directly by newing them up and setting a script src; however their intended use is for extending or mixing into your own classes to create facades or adapters to wrap third party libraries in order decouple your code from a third party interface you do not control and may or may not yet exist in the global scope.
+The script loading toolkit provides three major tools (`Script`, `BasicScript` and `FunctionQueue`) for managing script loading. These can be used directly by newing them up and setting a script src; however their intended use is for extending or mixing into your own classes to create facades or adapters to wrap third party libraries in order decouple your code from a third party interface you do not control and may or may not yet exist in the global scope.
 
 We recommend you use Async/Await when dealing with promises to simplify your code and reduce callback chains, however the below examples will also demonstrate Promise/then callback syntax.
 
 ### Direct Usage
 
 #### Script
-`Script` can be used to load any script and has an asynchronous queueing API so you can start queueing up functions to be run once it has finished loading.
+`Script` can be used to load any script by url and has an asynchronous queueing API so you can start queueing up functions to be run once it has finished loading:
 
 ```js
 import { Script } from 'script-loading-toolkit';
@@ -73,7 +74,7 @@ acmeLibrary.load().then(() => {
 ```
 
 #### FunctionQueue
-`FunctionQueue` is only the queueing functionality without the script loading functionality. This can be useful for objects that might rely on a third party library being loaded, but you do not want to couple them with the logic to determine when that script should load.
+`FunctionQueue` is only the queueing functionality from `Script` without the script loading functionality. This can be useful for objects that might rely on a third party library being loaded, but you do not want to couple them with the logic to determine when that script should load.
 
 ```js
 import { FunctionQueue, BasicScript } from 'script-loading-toolkit';
@@ -90,7 +91,8 @@ const myVideo = {
     }
 }
 
-// It is safe to call this method even if window.acmeVideo doesn't exist yet. It wont run until we execute the queue.
+// It is safe to call this method even if window.acmeVideo doesn't exist yet.
+// It wont run until we execute the queue.
 myVideo.play();
 
 const acmeLibrary = new BasicScript();
