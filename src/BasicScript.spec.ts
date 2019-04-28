@@ -1,7 +1,8 @@
 import { mocked } from 'ts-jest/utils';
 import { BasicScriptMixin, BasicScript } from './BasicScript';
+import { Script } from  './Script';
 import { loadScript } from './utilities/loadScript';
-import { testSources } from  '../test/globals';
+import { testSources } from '../test/globals';
 
 jest.mock('./utilities/loadScript');
 
@@ -115,6 +116,10 @@ describe('BasicScript', (): void => {
             });
             it('Can be chained.', (): void => {
                 const testFunc = (): void => { testInstance.addDependency(new BasicScript()).addDependency(new BasicScript()) };
+                expect(testFunc).not.toThrow();
+            });
+            it('Works with Scripts.', (): void => {
+                const testFunc = (): void => { testInstance.addDependency(new Script()) };
                 expect(testFunc).not.toThrow();
             });
         });

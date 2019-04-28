@@ -53,7 +53,7 @@ export const ScriptInitializerMixin = <TBase extends Constructor<BasicScript & F
          * Executed after the script has loaded.
          *
          * @protected
-         * @returns {Promise<QueuedScript>}
+         * @returns {Promise<void>}
          */
         async _scriptLoaded(): Promise<void> {
             await super._scriptLoaded();
@@ -73,7 +73,7 @@ export const ScriptInitializerMixin = <TBase extends Constructor<BasicScript & F
          * Executed after the script has loaded. Triggers initialization operations.
          * Overwrite this method to do script specific initialization logic.
          *
-         * @returns {Promise<QueuedScript>}
+         * @returns {Promise<void>}
          */
         async initialize(): Promise<void> {
             if (this.isInitialized) return;
