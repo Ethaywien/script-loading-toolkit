@@ -208,7 +208,7 @@ await myScript.load();
 console.log(myDependency.isLoaded); // > True!
 ```
 
-If a dependency *MUST* be loaded before it's dependant script (i.e loading it has side effects that must be in place for the dependant to not error), add it with the hasSideEffects argument set to `true`.
+If a dependency *MUST* be loaded before it's dependant script (i.e loading it has side effects that must be in place for the dependant to not error), add it with the `hasSideEffects` argument set to `true`.
 
 ```js
 // 'myScript' will not begin loading until 'myDependency' has finished loading.
@@ -218,19 +218,31 @@ await myScript.load();
 
 #### Properties
 The following properties are available on `Script` instances:
-| Property | Type | Default | Description |
-| --- | --- | --- | --- |
-| .src | string | `""` | URL of the script to load, including protocol (//, http://, https://, etc). |
-| .isEnabled | boolean | `true` | True if loading this script is enabled. |
-| .isLoading | boolean | `false` | True if the script is currently loading. |
-| .isLoaded | boolean | `false` | True if the script has finished loading without error. |
-| .isErrored | boolean | `false` | True if the script has failed to load for some reason. |
-| .isExecuted | boolean | `false` | True if the script's callback queue has been executed. |
-| .isInitialized | boolean | `false` | True if the script has been initialized. |
-| .hasDependencies | boolean | `false` | True if dependencies have been added to load with this script. |
+
+| Property         | Type    | Default | Description                                                                 |
+| ---------------- | ------- | ------- | --------------------------------------------------------------------------- |
+| .src             | string  | `""`    | URL of the script to load, including protocol (//, http://, https://, etc). |
+| .isEnabled       | boolean | `true`  | True if loading this script is enabled.                                     |
+| .isLoading       | boolean | `false` | True if the script is currently loading.                                    |
+| .isLoaded        | boolean | `false` | True if the script has finished loading without error.                      |
+| .isErrored       | boolean | `false` | True if the script has failed to load for some reason.                      |
+| .isExecuted      | boolean | `false` | True if the script's callback queue has been executed.                      |
+| .isInitialized   | boolean | `false` | True if the script has been initialized.                                    |
+| .hasDependencies | boolean | `false` | True if dependencies have been added to load with this script.              |
 
 #### Lifecycle Methods
-The following lifecycle method's intended use is by overriding them when extending Script.
+
+| Method | Description |
+| --- | --- |
+| onEnabled | Called every time after the `.enable()` method is called. |
+| onDisabled | Called every time after the `.disable()` method is called. |
+| onLoading | Called the first time `.load()` method is called, if the script is enabled. |
+| onLoaded | Called the first time after script loading completes. |
+| onErrored | Called if the script fails to load (only if it was enabled). |
+| onExecuted | Called the first time after all queued callbacks execute; triggered automatically after loading completes, as part of initialization. |
+| onInitialized | Called the first time the `.initialize()` method is called, this happens automatically after loading completes. |
+
+Lifecycle methods are intended for use by overriding them when extending Script.
 
 ```js
 class AcmeScript extends Script {
@@ -247,16 +259,6 @@ class AcmeScript extends Script {
 const myScript = new Script();
 myScript.onLoaded = () => console.log("Anti pattern!"); // Don't do this.
 ```
-
-| Method | Description |
-| --- | --- |
-| onEnabled | Called every time after the `.enable()` method is called. |
-| onDisabled | Called every time after the `.disable()` method is called. |
-| onLoading | Called the first time `.load()` method is called, if the script is enabled. |
-| onLoaded | Called the first time after script loading completes. |
-| onErrored | Called if the script fails to load (only if it was enabled). |
-| onExecuted | Called the first time after all queued callbacks execute; triggered automatically after loading completes, as part of initialization. |
-| onInitialized | Called the first time the `.initialize()` method is called, this happens automatically after loading completes. |
 
 
 #### Direct Usage
@@ -287,7 +289,7 @@ acmeScript.load().then(() => {
 });
 ```
 #### Properties
-The following properties are available on `Script` instances:
+
 | Property | Type | Default | Description |
 | --- | --- | --- | --- |
 | .src | string | `""` | URL of the script to load, including protocol (//, http://, https://, etc). |
@@ -298,6 +300,7 @@ The following properties are available on `Script` instances:
 | .hasDependencies | boolean | `false` | True if dependencies have been added to load with this script. |
 
 #### Lifecycle Methods
+
 | Method | Description |
 | --- | --- |
 | onEnabled | Called every time after the `.enable()` method is called. |
@@ -339,12 +342,13 @@ acmeScript.load().then(() => {
 });
 ```
 #### Properties
-The following properties are available on `Script` instances:
+
 | Property | Type | Default | Description |
 | --- | --- | --- | --- |
 | .isExecuted | boolean | `false` | True if the script's callback queue has been executed. |
 
 #### Lifecycle Methods
+
 | Method | Description |
 | --- | --- |
 | onEnabled | Called every time after the `.enable()` method is called. |
