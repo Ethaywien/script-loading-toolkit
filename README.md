@@ -7,7 +7,10 @@ A browser library for handling asynchronously loading and interacting with third
 For EcmaScript and CommonJS module distributions install with the package manager of your choice. (Recommended)
 
 ```sh
+# npm
 npm install script-loading-toolkit --save
+# yarn
+yarn add script-loading-toolkit
 ```
 
 or include the UMD browser distribution directly:
@@ -272,6 +275,8 @@ acmeScript.src = "http://acme.com/acmeScript.js";
 
 acmeScript.load();
 ```
+
+
 ---
 
 ### BasicScript 
@@ -308,6 +313,7 @@ acmeScript.load().then(() => {
 | onLoading | Called the first time `.load()` method is called, if the script is enabled. |
 | onLoaded | Called the first time after script loading completes. |
 | onErrored | Called if the script fails to load (only if it was enabled). |
+
 
 ---
 
@@ -357,4 +363,29 @@ acmeScript.load().then(() => {
 ---
 
 ### Mixins
-TODO
+The Script Loading Toolkit includes 'Mixin' implementations of each of the above classes to allow you greater flexibility over classic inheritence. The mixin function will add all the functionality of one of the toolkit classes to the given constructor:
+```js
+import { ScriptMixin } from 'script-loading-toolkit';
+
+class AcmeSuperClass {
+    someMethod() {
+        console.log('hi!');
+    }
+}
+
+class AcmeScript extends ScriptMixin(AcmeSuperClass) {
+    constructor() {
+        this.src = "http://acme.com/acme-video-library.js";
+    }
+}
+const acmeScriptInstance = new AcmeScript();
+acmeScriptInstance.someMethod(); // > hi!
+acmeScriptInstance.load();
+```
+
+| Function | Description |
+| --- | --- |
+| ScriptMixin | Adds `Script` functionality. |
+| FunctionQueueMixin | Adds `FunctionQueue` functionality. |
+| BasicScriptMixin | Adds `BasicScript` functionality. |
+| ScriptInitializerMixin | This mixin is to be used specifically on constructors/classes that implement both the `FunctionQueue` and `BasicScript` interfaces and adds the initializing functionality from `Script`. |
