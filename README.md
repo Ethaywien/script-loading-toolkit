@@ -2,8 +2,6 @@
 A browser library for handling asynchronously loading and interacting with third party script dependencies without race conditions or render blocking. Written in TypeScript. 
 
 ## Installation
-***TODO, not yet published! watch this space.***
-
 For EcmaScript and CommonJS module distributions install with the package manager of your choice. (Recommended)
 
 ```sh
