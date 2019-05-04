@@ -1,3 +1,6 @@
+[![Build Status](https://travis-ci.org/Ethaywien/script-loading-toolkit.svg?branch=master)](https://travis-ci.org/Ethaywien/script-loading-toolkit)
+[![Coverage Status](https://coveralls.io/repos/github/Ethaywien/script-loading-toolkit/badge.svg?branch=master)](https://coveralls.io/github/Ethaywien/script-loading-toolkit?branch=master)
+
 # Script Loading Toolkit
 A browser library for handling asynchronously loading and interacting with third party script dependencies without race conditions or render blocking. Written in TypeScript. 
 

@@ -1,5 +1,5 @@
 import { mocked } from 'ts-jest/utils';
-import { BasicScriptMixin, BasicScript } from './BasicScript';
+import { BasicScriptMixin, BasicScript, BasicScriptBuilder } from './BasicScript';
 import { Script } from  './Script';
 import { loadScript } from './utilities/loadScript';
 import { testSources } from '../test/globals';
@@ -23,6 +23,24 @@ describe('BasicScriptMixin', (): void => {
         expect(typeof TestMixinClass.prototype.enable).toBe('function');
         expect(typeof TestMixinClass.prototype.disable).toBe('function');
         expect(typeof TestMixinClass.prototype.load).toBe('function');
+    });
+});
+
+describe('BasicScriptBuilder', (): void => {
+    it('Creates a new BasicScript constructor.', (): void => {
+        const TestClass = BasicScriptBuilder();
+        expect(typeof TestClass.prototype.enable).toBe('function');
+        expect(typeof TestClass.prototype.load).toBe('function');
+    });
+    it('Can be passed a constructor.', (): void => {
+        class TestClass {};
+        const testFnc = () => BasicScriptBuilder(TestClass);
+        expect(testFnc).not.toThrowError();
+    });
+    it('Returned object can be newed.', (): void => {
+        const TestMixinClass = BasicScriptBuilder();
+        const testFnc = () => new TestMixinClass();
+        expect(testFnc).not.toThrowError();
     });
 });
 

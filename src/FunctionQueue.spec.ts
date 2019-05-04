@@ -1,4 +1,4 @@
-import { FunctionQueueMixin, FunctionQueue, QueueableFunction } from './FunctionQueue';
+import { FunctionQueueMixin, FunctionQueue, QueueableFunction, FunctionQueueBuilder } from './FunctionQueue';
 
 describe('FunctionQueueMixin', (): void => {
     it('Adds FunctionQueue functionality to given constructor.', (): void => {
@@ -9,6 +9,24 @@ describe('FunctionQueueMixin', (): void => {
         expect(TestMixinClass.testProp).toBe('test');
         expect(typeof TestMixinClass.prototype.execute).toBe('function');
         expect(typeof TestMixinClass.prototype.enqueue).toBe('function');
+    });
+});
+
+describe('FunctionQueueBuilder', (): void => {
+    it('Creates a new FunctionQueueBasicScript constructor.', (): void => {
+        const TestClass = FunctionQueueBuilder();
+        expect(typeof TestClass.prototype.execute).toBe('function');
+        expect(typeof TestClass.prototype.enqueue).toBe('function');
+    });
+    it('Can be passed a constructor.', (): void => {
+        class TestClass {};
+        const testFnc = () => FunctionQueueBuilder(TestClass);
+        expect(testFnc).not.toThrowError();
+    });
+    it('Returned object can be newed.', (): void => {
+        const TestMixinClass = FunctionQueueBuilder();
+        const testFnc = () => new TestMixinClass();
+        expect(testFnc).not.toThrowError();
     });
 });
 

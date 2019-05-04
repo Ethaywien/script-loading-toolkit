@@ -122,7 +122,7 @@ export const FunctionQueueMixin = <TBase extends Constructor> (Base: TBase) =>
 export type FunctionQueueMixin = Mixin<typeof FunctionQueueMixin>;
 
 /** Builder for FunctionQueue */
-const FunctionQueueBuilder = (Base = class FunctionQueue {}): Constructor<FunctionQueueMixin> => FunctionQueueMixin(Base);
+export const FunctionQueueBuilder = (Base = class FunctionQueue {}): Constructor<FunctionQueueMixin> => FunctionQueueMixin(Base);
 
 /**
  * Basic script to enqueue functions and batch execute them in order.

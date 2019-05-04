@@ -100,7 +100,8 @@ export const ScriptMixin = <TBase extends Constructor>(Base: TBase) =>
 export type ScriptMixin = Mixin<typeof ScriptMixin>;
 
 /** Builder for Script */
-const ScriptBuilder = (Base = class Script {}): Constructor<ScriptMixin> => ScriptMixin(Base);
+export const ScriptBuilder = (Base = class Script {}): Constructor<ScriptMixin> => ScriptMixin(Base);
+
 /**
  * Script loading class with asynchronous queueing API.
  * @class Script

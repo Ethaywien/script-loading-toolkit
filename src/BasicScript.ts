@@ -315,7 +315,7 @@ export const BasicScriptMixin = <TBase extends Constructor>(Base: TBase) =>
 export type BasicScriptMixin = Mixin<typeof BasicScriptMixin>;
 
 /** Builder for BasicScript */
-const BasicScriptBuilder = (Base = class BasicScript {}): Constructor<BasicScriptMixin> => BasicScriptMixin(Base);
+export const BasicScriptBuilder = (Base = class BasicScript {}): Constructor<BasicScriptMixin> => BasicScriptMixin(Base);
 
 /**
  * Basic script loading class without an asynchronous queueing api.

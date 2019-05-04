@@ -1,9 +1,19 @@
-import { Script, ScriptMixin, ScriptInitializerMixin } from './Script';
+import { Script, ScriptMixin, ScriptInitializerMixin, ScriptBuilder } from './Script';
 import { BasicScriptMixin } from './BasicScript';
 import { FunctionQueueMixin } from './FunctionQueue';
+import { testSources } from '../test/globals';
+
+jest.mock('./utilities/loadScript');
+
+const { validSrc, notFoundSrc } = testSources;
 
 describe('ScriptInitializerMixin', (): void => {
-    it('Adds Script initialization functionality to given constructor that implements FunctionQueue and BasicScript.', (): void => {
+    it('Accepts a constructor that implements FunctionQueue and BasicScript.', (): void => {
+        const MixedInTestClass = BasicScriptMixin(FunctionQueueMixin(class {}));
+        const testFnc = () => ScriptInitializerMixin(MixedInTestClass);
+        expect(testFnc).not.toThrowError();
+    });
+    it('Adds Script initialization functionality to given constructor.', (): void => {
         class TestClass {
             public static testProp: string = 'test';
         };
@@ -11,6 +21,11 @@ describe('ScriptInitializerMixin', (): void => {
         const TestMixinClass = ScriptInitializerMixin(MixedInTestClass);
         expect(TestMixinClass.testProp).toBe('test');
         expect(typeof TestMixinClass.prototype.initialize).toBe('function');
+    });
+    it('Returned object can be newed.', (): void => {
+        const TestMixinClass = ScriptInitializerMixin(BasicScriptMixin(FunctionQueueMixin(class{})));
+        const testFnc = () => new TestMixinClass();
+        expect(testFnc).not.toThrowError();
     });
 });
 
@@ -24,6 +39,25 @@ describe('ScriptMixin', (): void => {
         expect(typeof TestMixinClass.prototype.initialize).toBe('function');
         expect(typeof TestMixinClass.prototype.enqueue).toBe('function');
         expect(typeof TestMixinClass.prototype.load).toBe('function');
+    });
+});
+
+describe('ScriptBuilder', (): void => {
+    it('Creates a new Script constructor.', (): void => {
+        const TestClass = ScriptBuilder();
+        expect(typeof TestClass.prototype.initialize).toBe('function');
+        expect(typeof TestClass.prototype.enqueue).toBe('function');
+        expect(typeof TestClass.prototype.load).toBe('function');
+    });
+    it('Can be passed a constructor.', (): void => {
+        class TestClass {};
+        const testFnc = () => ScriptBuilder(TestClass);
+        expect(testFnc).not.toThrowError();
+    });
+    it('Returned object can be newed.', (): void => {
+        const TestMixinClass = ScriptBuilder();
+        const testFnc = () => new TestMixinClass();
+        expect(testFnc).not.toThrowError();
     });
 });
 
@@ -47,6 +81,7 @@ describe('Script', (): void => {
         let testInstance: Script;
         beforeEach((): void => {
             testInstance = new Script();
+            testInstance.src = validSrc;
         });
         describe('#initialize()', (): void => {
             it('Changes isInitialized to true.', async (): Promise<void> => {
@@ -64,6 +99,24 @@ describe('Script', (): void => {
                 expect(testSpy).toBeCalledTimes(1);
                 await testInstance.initialize();
                 expect(testSpy).toBeCalledTimes(1);
+            });
+        });
+        describe('#load()', (): void => {
+            it('Triggers the ".initialize()" method if loading succeeds.', async (): Promise<void> => {
+                const testSpy = jest.spyOn(testInstance, 'initialize');
+                await testInstance.load();
+                expect(testSpy).toBeCalledTimes(1);
+                expect(testInstance.isLoaded).toBe(true);
+            });
+            it('Does not trigger the ".initialize()" method if loading fails.', async (): Promise<void> => {
+                const testSpy = jest.spyOn(testInstance, 'initialize');
+                testInstance.src = notFoundSrc;
+                try {
+                    await testInstance.load();
+                } catch (e) {}
+                expect(testSpy).not.toBeCalled();
+                expect(testInstance.isErrored).toBe(true);
+                expect(testInstance.isLoaded).toBe(false);
             });
         });
     });
