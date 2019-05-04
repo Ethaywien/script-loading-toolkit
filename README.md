@@ -25,7 +25,7 @@ The script loading toolkit provides three major tools ([`Script`](#script), [`Ba
 We recommend you use Async/Await when dealing with promises to simplify your code and reduce callback chains, however the below examples will also demonstrate Promise/then callback syntax.
 
 ### Script
-`Script` can be used to load any script by url and has an asynchronous queueing API so you can start queueing up functions to be run once it has finished loading:
+The `Script` class can be used to load any script (by setting the `src` attribute to a url) and has an asynchronous queueing API so you can start queueing up functions to be run once it has finished loading:
 
 ```js
 import { Script } from 'script-loading-toolkit';
@@ -313,6 +313,7 @@ acmeScript.load().then(() => {
 | onErrored | Called if the script fails to load (only if it was enabled). |
 
 
+
 ---
 
 ### FunctionQueue
@@ -357,6 +358,8 @@ acmeScript.load().then(() => {
 | --- | --- |
 | onEnabled | Called every time after the `.enable()` method is called. |
 | onExecuted | Called the first time after all queued callbacks execute; triggered automatically after loading completes, as part of initialization. |
+
+
 
 ---
 

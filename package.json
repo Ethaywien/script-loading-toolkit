@@ -11,7 +11,7 @@
   "scripts": {
     "build": "node ./node_modules/rollup/bin/rollup -c",
     "test": "node_modules/.bin/jest --config jestconfig.json",
-    "lint": "./node_modules/.bin/eslint ./src",
+    "lint": "./node_modules/.bin/eslint ./src/*",
     "clean": "rimraf dist/*",
     "prepare": "npm run clean && npm run build",
     "prepublishOnly": "npm test && npm run lint",
