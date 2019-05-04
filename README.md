@@ -1,8 +1,28 @@
-[![Build Status](https://travis-ci.org/Ethaywien/script-loading-toolkit.svg?branch=master)](https://travis-ci.org/Ethaywien/script-loading-toolkit)
-[![Coverage Status](https://coveralls.io/repos/github/Ethaywien/script-loading-toolkit/badge.svg?branch=master)](https://coveralls.io/github/Ethaywien/script-loading-toolkit?branch=master)
+# Script Loading Toolkit [![Build Status](https://travis-ci.org/Ethaywien/script-loading-toolkit.svg?branch=master)](https://travis-ci.org/Ethaywien/script-loading-toolkit) [![Coverage Status](https://coveralls.io/repos/github/Ethaywien/script-loading-toolkit/badge.svg?branch=master)](https://coveralls.io/github/Ethaywien/script-loading-toolkit?branch=master)
+A browser library for handling asynchronously loading and interacting with third party script dependencies without race conditions or render blocking. Written in TypeScript.
 
-# Script Loading Toolkit
-A browser library for handling asynchronously loading and interacting with third party script dependencies without race conditions or render blocking. Written in TypeScript. 
+<!-- toc -->
+
+- [Installation](#installation)
+- [Usage](#usage)
+  * [Script](#script)
+    + [Loading](#loading)
+      - [Enabling / Disabling loading](#enabling--disabling-loading)
+    + [Queueing](#queueing)
+    + [Initialization](#initialization)
+    + [Dependencies](#dependencies)
+    + [Properties](#properties)
+    + [Lifecycle Methods](#lifecycle-methods)
+    + [Direct Usage](#direct-usage)
+  * [BasicScript](#basicscript)
+    + [Properties](#properties-1)
+    + [Lifecycle Methods](#lifecycle-methods-1)
+  * [FunctionQueue](#functionqueue)
+    + [Properties](#properties-2)
+    + [Lifecycle Methods](#lifecycle-methods-2)
+  * [Mixins](#mixins)
+
+<!-- tocstop -->
 
 ## Installation
 For EcmaScript and CommonJS module distributions install with the package manager of your choice. (Recommended)
