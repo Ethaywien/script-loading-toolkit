@@ -1,6 +1,6 @@
 import { mocked } from 'ts-jest/utils';
 import { BasicScriptMixin, BasicScript, BasicScriptBuilder } from './BasicScript';
-import { Script } from  './Script';
+import { Script } from './Script';
 import { loadScript } from './utilities/loadScript';
 import { testSources } from '../test/globals';
 
@@ -8,16 +8,18 @@ jest.mock('./utilities/loadScript');
 
 const { validSrc, notFoundSrc } = testSources;
 
-afterEach((): void => {
-    window.testScriptLoaded = false;
-    mocked(loadScript).mockClear();
-});
+afterEach(
+    (): void => {
+        window.testScriptLoaded = false;
+        mocked(loadScript).mockClear();
+    },
+);
 
 describe('BasicScriptMixin', (): void => {
     it('Adds BasicScript functionality to given constructor.', (): void => {
         class TestClass {
             public static testProp: string = 'test';
-        };
+        }
         const TestMixinClass = BasicScriptMixin(TestClass);
         expect(TestMixinClass.testProp).toBe('test');
         expect(typeof TestMixinClass.prototype.enable).toBe('function');
@@ -33,7 +35,7 @@ describe('BasicScriptBuilder', (): void => {
         expect(typeof TestClass.prototype.load).toBe('function');
     });
     it('Can be passed a constructor.', (): void => {
-        class TestClass {};
+        class TestClass {}
         const testFnc = () => BasicScriptBuilder(TestClass);
         expect(testFnc).not.toThrowError();
     });
@@ -61,6 +63,18 @@ describe('BasicScript', (): void => {
                 const testInstance = new BasicScript();
                 testInstance.src = 'test';
                 expect(testInstance.src).toBe('test');
+            });
+            it('Is set to the src attribute of the passed constructor argument.', (): void => {
+                const testInstance = new BasicScript({ src: validSrc });
+                expect(testInstance.src).toBe(validSrc);
+            });
+            it('Is set to the first constructor argument if it is a valid string src.', (): void => {
+                const testInstance = new BasicScript(validSrc);
+                expect(testInstance.src).toBe(validSrc);
+            });
+            it('Is not set to the first constructor argument if it is not a valid string src.', (): void => {
+                const testInstance = new BasicScript('invalid');
+                expect(testInstance.src).toBe('');
             });
         });
 
@@ -102,25 +116,35 @@ describe('BasicScript', (): void => {
 
     describe('Methods: ', (): void => {
         let testInstance: BasicScript;
-        beforeEach((): void => {
-            testInstance = new BasicScript();
-            testInstance.src = validSrc;
-        });
+        beforeEach(
+            (): void => {
+                testInstance = new BasicScript();
+                testInstance.src = validSrc;
+            },
+        );
 
         describe('#addDependency()', (): void => {
             it('Throws if given dependency has no load method.', (): void => {
-                // @ts-ignore: Suppress TS error of invalid input to ensure testing es5 runtime errors.
-                const testFunc = (): void => { testInstance.addDependency({}) };
+                const testFunc = (): void => {
+                    // @ts-ignore: Suppress TS error of invalid input to ensure testing es5 runtime errors.
+                    testInstance.addDependency({});
+                };
                 expect(testFunc).toThrowError(/Given object has no 'load' method/);
             });
             it('Throws if the load method has already been called.', (): void => {
-                const testFunc = (): void => { testInstance.addDependency(new BasicScript()) };
+                const testFunc = (): void => {
+                    testInstance.addDependency(new BasicScript());
+                };
                 testInstance.load();
                 expect(testFunc).toThrowError(/Script has already started loading/);
             });
             it('Optionally accepts a second boolean argument.', (): void => {
-                const testFunc = (): void => { testInstance.addDependency(new BasicScript()) };
-                const testFunc2 = (): void => { testInstance.addDependency(new BasicScript(), true) };
+                const testFunc = (): void => {
+                    testInstance.addDependency(new BasicScript());
+                };
+                const testFunc2 = (): void => {
+                    testInstance.addDependency(new BasicScript(), true);
+                };
                 expect(testFunc).not.toThrow();
                 expect(testFunc2).not.toThrow();
             });
@@ -133,11 +157,15 @@ describe('BasicScript', (): void => {
                 expect(testInstance2.hasDependencies).toBe(true);
             });
             it('Can be chained.', (): void => {
-                const testFunc = (): void => { testInstance.addDependency(new BasicScript()).addDependency(new BasicScript()) };
+                const testFunc = (): void => {
+                    testInstance.addDependency(new BasicScript()).addDependency(new BasicScript());
+                };
                 expect(testFunc).not.toThrow();
             });
             it('Works with Scripts.', (): void => {
-                const testFunc = (): void => { testInstance.addDependency(new Script()) };
+                const testFunc = (): void => {
+                    testInstance.addDependency(new Script());
+                };
                 expect(testFunc).not.toThrow();
             });
         });
@@ -198,16 +226,15 @@ describe('BasicScript', (): void => {
                 testInstance.src = notFoundSrc;
                 try {
                     await testInstance.load();
-                } catch (e) {};
+                } catch (e) {}
                 expect(testInstance.isLoading).toBe(false);
                 expect(testInstance.isLoaded).toBe(false);
                 expect(testInstance.isErrored).toBe(true);
             });
-            it('Will not trigger the script to load multiple times if called concurrently.', async (): Promise<void> => {
-                await Promise.all( [
-                    testInstance.load(),
-                    testInstance.load()
-                ]);
+            it('Will not trigger the script to load multiple times if called concurrently.', async (): Promise<
+                void
+            > => {
+                await Promise.all([testInstance.load(), testInstance.load()]);
                 expect(loadScript).toBeCalledTimes(1);
             });
             it('Resolves and does not try to load again if already loaded.', async (): Promise<void> => {
@@ -235,17 +262,19 @@ describe('BasicScript', (): void => {
     describe('Lifecycle Methods:', (): void => {
         let testInstance: BasicScript;
         let testMockCallback: () => void;
-        beforeEach((): void => {
-            testInstance = new BasicScript();
-            testInstance.src = validSrc;
-            testMockCallback = jest.fn();
-        });
+        beforeEach(
+            (): void => {
+                testInstance = new BasicScript();
+                testInstance.src = validSrc;
+                testMockCallback = jest.fn();
+            },
+        );
 
         describe('#onEnabled', (): void => {
             it('Can be overridden.', (): void => {
                 const testFunc = (): void => {
                     testInstance.onEnabled = testMockCallback;
-                }
+                };
                 testInstance.src = validSrc;
                 expect(testFunc).not.toThrow();
                 expect(testInstance.onEnabled).toBe(testMockCallback);
@@ -263,7 +292,7 @@ describe('BasicScript', (): void => {
             it('Can be overridden.', (): void => {
                 const testFunc = (): void => {
                     testInstance.onDisabled = testMockCallback;
-                }
+                };
                 testInstance.src = validSrc;
                 expect(testFunc).not.toThrow();
                 expect(testInstance.onDisabled).toBe(testMockCallback);
@@ -281,7 +310,7 @@ describe('BasicScript', (): void => {
             it('Can be overridden.', (): void => {
                 const testFunc = (): void => {
                     testInstance.onDisabled = testMockCallback;
-                }
+                };
                 testInstance.src = validSrc;
                 expect(testFunc).not.toThrow();
                 expect(testInstance.onDisabled).toBe(testMockCallback);
@@ -298,7 +327,7 @@ describe('BasicScript', (): void => {
             it('Can be overridden.', (): void => {
                 const testFunc = (): void => {
                     testInstance.onDisabled = testMockCallback;
-                }
+                };
                 testInstance.src = validSrc;
                 expect(testFunc).not.toThrow();
                 expect(testInstance.onDisabled).toBe(testMockCallback);
@@ -314,7 +343,7 @@ describe('BasicScript', (): void => {
             it('Can be overridden.', (): void => {
                 const testFunc = (): void => {
                     testInstance.onDisabled = testMockCallback;
-                }
+                };
                 testInstance.src = validSrc;
                 expect(testFunc).not.toThrow();
                 expect(testInstance.onDisabled).toBe(testMockCallback);
@@ -324,7 +353,7 @@ describe('BasicScript', (): void => {
                 testInstance.onErrored = testMockCallback;
                 try {
                     await testInstance.load();
-                } catch (e) {};
+                } catch (e) {}
                 expect(testInstance.onErrored).toBeCalledTimes(1);
             });
         });
@@ -335,16 +364,20 @@ describe('BasicScript', (): void => {
         let testDependency: BasicScript;
         let testPromise: Promise<void>;
         let testSpy: jest.Mock<Promise<BasicScript>>;
-        beforeEach((): void => {
-            testInstance = new BasicScript();
-            testInstance.src = validSrc;
-            testDependency = new BasicScript();
-            testPromise = new Promise((resolve): void => {
-                testResolver = resolve;
-            });
-            // @ts-ignore: Suppress error on mock load implementation.
-            testSpy = jest.spyOn(testDependency, 'load').mockImplementation((): Promise<BasicScript> => testPromise);
-        });
+        beforeEach(
+            (): void => {
+                testInstance = new BasicScript();
+                testInstance.src = validSrc;
+                testDependency = new BasicScript();
+                testPromise = new Promise(
+                    (resolve): void => {
+                        testResolver = resolve;
+                    },
+                );
+                // @ts-ignore: Suppress error on mock load implementation.
+                testSpy = jest.spyOn(testDependency, 'load').mockImplementation((): Promise<BasicScript> => testPromise);
+            },
+        );
         it('May start loading before dependencies without side effects have loaded.', async (done): Promise<void> => {
             testInstance.addDependency(testDependency);
             testInstance.load();
@@ -371,7 +404,9 @@ describe('BasicScript', (): void => {
                 }, 1);
             }, 10);
         });
-        it('Will not begin loading until dependencies with side effect have finished loading.', async (done): Promise<void> => {
+        it('Will not begin loading until dependencies with side effect have finished loading.', async (done): Promise<
+            void
+        > => {
             testInstance.addDependency(testDependency, true);
             testInstance.load();
             setTimeout(async (): Promise<void> => {

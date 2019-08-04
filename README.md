@@ -56,9 +56,19 @@ import { Script } from 'script-loading-toolkit';
 
 class AcmeScript extends Script {
     constructor() {
+        super();
         this.src = "http://acme.com/acmeScript.js";
     }
 };
+```
+
+Script class can be used directly aswell by passing a valid url string to the constructor, or an object with an `src` attribute.
+```js
+const myScript = new Script("http://acme.com/acmeScript.js");
+const myScript2 = new Script({ src: "http://acme.com/acmeScript.js" });
+
+console.log(myScript.src); // > "http://acme.com/acmeScript.js"
+console.log(myScript2.src); // > "http://acme.com/acmeScript.js"
 ```
 
 #### Loading
@@ -70,6 +80,7 @@ The `.load()` method will return a promise that will reject if the script fails 
 ```js
 class AcmeScript extends Script {
     constructor() {
+        super();
         this.src = "http://acme.com/acmeScript.js";
     }
 };
@@ -129,6 +140,7 @@ You can queue callbacks to run once your script has loaded. When using `.enqueue
 ```js
 class AcmeScript extends Script {
     constructor() {
+        super();
         this.src = "http://acme.com/acmeScript.js";
     }
 };
@@ -169,6 +181,7 @@ The `.enqueue()` method is most powerful for use when extending `Script` to crea
 ```js
 class AcmeScript extends Script {
     constructor() {
+        super();
         this.src = "http://acme.com/acmeScript.js";
     }
 
@@ -194,6 +207,7 @@ After the script has loaded, executing queued callbacks is triggered by the `ini
 ```js
 class AcmeScript extends Script {
     constructor() {
+        super();
         this.src = "http://acme.com/acmeScript.js";
     }
     
@@ -214,11 +228,13 @@ If other scripts are required for a script to function and you don't want to han
 ```js
 class DependencyScript extends Script {
     constructor() {
+        super();
         this.src = "http://acme.com/someDependency.js";
     }
 };
 class AcmeScript extends Script {
     constructor() {
+        super();
         this.src = "http://acme.com/acmeScript.js";
     }
 };
@@ -271,6 +287,7 @@ Lifecycle methods are intended for use by overriding them when extending Script.
 ```js
 class AcmeScript extends Script {
     constructor() {
+        super();
         this.src = "http://acme.com/acmeScript.js";
     }
     // Use lifecycle methods like this:
@@ -305,8 +322,7 @@ acmeScript.load();
 ```js
 import { BasicScript } from 'script-loading-toolkit';
 
-const acmeScript = new BasicScript();
-acmeScript.src = "http://acme.com/acmeScript.js";
+const acmeScript = new BasicScript("http://acme.com/acmeScript.js");
 
 acmeScript.load().then(() => {
     // The scipt has loaded. Do something here!

@@ -1,8 +1,9 @@
-import { loadScript } from "./utilities/loadScript";
-import { contextualError } from "./utilities/contextualError";
-import { Constructor, Mixin } from "./types";
+import { Constructor, Mixin } from './types';
+import { loadScript } from './utilities/loadScript';
+import { isValidSrc } from './utilities/isValidSrc';
+import { contextualError } from './utilities/contextualError';
 
-/** 
+/**
  * @typedef {Object} BasicScriptState
  * @property {boolean} loaded
  * @property {boolean} loading
@@ -13,9 +14,9 @@ export interface BasicScriptState {
     [key: string]: boolean;
     enabled: boolean;
     loaded: boolean;
-    loading: boolean; 
+    loading: boolean;
     errored: boolean;
-};
+}
 
 /**
  * Initial state for basic scripts.
@@ -24,22 +25,39 @@ export const initialBasicScriptState: BasicScriptState = {
     enabled: true,
     loaded: false,
     loading: false,
-    errored: false
+    errored: false,
 };
 
 /**
  * Mixin for basic script functionality without asynchronous queueing.
- * 
+ *
  * @mixin
  * @param  {TBase} Base - Constructor to extend.
  * @returns {Constructor<BasicScript & TBase>} Constructor with mixed in functionality.
  */
-export const BasicScriptMixin = <TBase extends Constructor>(Base: TBase) => 
+export const BasicScriptMixin = <TBase extends Constructor>(Base: TBase) =>
     class BasicScript extends Base {
-
+        /* eslint-disable-next-line */
+        constructor(...args: any[]) {
+            super(...args);
+            const arg1 = args[0];
+            if (arg1) {
+                // If the first argument has a src attribute
+                if (arg1.src && typeof arg1.src == 'string') {
+                    // Set the src
+                    this.src = arg1.src;
+                }
+                // Or if the first argument IS a valid src
+                if (typeof arg1 === 'string' && isValidSrc(arg1)) {
+                    // Set the src
+                    this.src = arg1;
+                }
+            }
+            //TODO: create script element here
+        }
         /**
          * Custom error namespace.
-         * 
+         *
          * @protected
          * @property
          * @type {string}
@@ -66,7 +84,7 @@ export const BasicScriptMixin = <TBase extends Constructor>(Base: TBase) =>
 
         /**
          * Promise to track loading completion on subsequent concurrent calls of 'load'.
-         * 
+         *
          * @protected
          * @property
          * @type {(Promise<this>?)} Promise that will resolve with this instance when loading is complete.
@@ -74,7 +92,7 @@ export const BasicScriptMixin = <TBase extends Constructor>(Base: TBase) =>
         _loadingPromise: Promise<this> | null = null;
         /**
          * Internal script loading state.
-         * 
+         *
          * @protected
          * @property
          * @type {BasicScriptState}
@@ -83,7 +101,7 @@ export const BasicScriptMixin = <TBase extends Constructor>(Base: TBase) =>
 
         /**
          * True if any hard dependencies have been added.
-         * 
+         *
          * @protected
          * @property
          * @type {boolean}
@@ -93,7 +111,7 @@ export const BasicScriptMixin = <TBase extends Constructor>(Base: TBase) =>
         }
         /**
          * True if any soft dependencies have been added.
-         * 
+         *
          * @protected
          * @property
          * @type {boolean}
@@ -110,7 +128,7 @@ export const BasicScriptMixin = <TBase extends Constructor>(Base: TBase) =>
         async _loadDependencies(): Promise<void> {
             const loader = (dependency: BasicScript): Promise<BasicScript> => dependency.load();
             let loadingHardDependencies: Promise<BasicScript>[] = [];
-            
+
             // Start hard dependencies loading
             if (this._hasHardDependencies) {
                 loadingHardDependencies = this._hardDependencies.map(loader);
@@ -169,7 +187,8 @@ export const BasicScriptMixin = <TBase extends Constructor>(Base: TBase) =>
          * Is the script enabled (disabled scripts will not load).
          * @readonly
          * @type {boolean}
-         */    
+         */
+
         get isEnabled(): boolean {
             return this._state.enabled;
         }
@@ -177,7 +196,8 @@ export const BasicScriptMixin = <TBase extends Constructor>(Base: TBase) =>
          * Has the script finished loading.
          * @readonly
          * @type {boolean}
-         */    
+         */
+
         get isLoaded(): boolean {
             return this._state.loaded;
         }
@@ -215,11 +235,17 @@ export const BasicScriptMixin = <TBase extends Constructor>(Base: TBase) =>
         addDependency(dependency: BasicScript, hasSideffects: boolean = false): this {
             // If the script has already loaded throw.
             if (this.isLoaded || this.isLoading) {
-                throw contextualError(`Error adding dependency. Script has already started loading.`, this._errorNamespace);
+                throw contextualError(
+                    `Error adding dependency. Script has already started loading.`,
+                    this._errorNamespace,
+                );
             }
             // If the given dependency is not a script throw.
             if (typeof dependency.load !== 'function') {
-                throw contextualError(`Error adding dependency. Given object has no 'load' method.`, this._errorNamespace);
+                throw contextualError(
+                    `Error adding dependency. Given object has no 'load' method.`,
+                    this._errorNamespace,
+                );
             }
             // If the dependency has side effects:
             if (hasSideffects) {
@@ -263,7 +289,7 @@ export const BasicScriptMixin = <TBase extends Constructor>(Base: TBase) =>
             if (this.isLoaded) {
                 return this;
             }
-            
+
             // If it has no source specified throw.
             if (this.src === '') {
                 throw contextualError(`Could not load script with source of ''.`, this._errorNamespace);
@@ -276,46 +302,49 @@ export const BasicScriptMixin = <TBase extends Constructor>(Base: TBase) =>
 
             // If we have not created a promise to track loading status, do so.
             if (!this._loadingPromise) {
-                this._loadingPromise = new Promise(async (resolve, reject): Promise<void> => {
-                    // Flag the script as loading
-                    await this._scriptLoading();
-                    
-                    try{
-                        // Start dependencies loading
-                        await this._loadDependencies();
+                this._loadingPromise = new Promise(
+                    async (resolve, reject): Promise<void> => {
+                        // Flag the script as loading
+                        await this._scriptLoading();
 
-                        // Load the script
-                        await loadScript(this.src);
-                    } catch(err) {
-                        // Flag the script as errored
-                        await this._scriptError();
-                        return reject(contextualError(`Error loading ${this.src} `, this._errorNamespace, err));
-                    }
+                        try {
+                            // Start dependencies loading
+                            await this._loadDependencies();
 
-                    // Flag the script as loaded
-                    await this._scriptLoaded();
+                            // Load the script
+                            await loadScript(this.src);
+                        } catch (err) {
+                            // Flag the script as errored
+                            await this._scriptError();
+                            return reject(contextualError(`Error loading ${this.src} `, this._errorNamespace, err));
+                        }
 
-                    return resolve(this);
-                });
+                        // Flag the script as loaded
+                        await this._scriptLoaded();
+
+                        return resolve(this);
+                    },
+                );
             }
 
             return this._loadingPromise;
         }
         /** Lifecycle callback for loading enabled. */
-        onEnabled(): void { }
+        onEnabled(): void {}
         /** Lifecycle callback for loading  disabled. */
-        onDisabled(): void { }
+        onDisabled(): void {}
         /** Lifecycle callback for loading commenced. */
-        onLoading(): void { }
+        onLoading(): void {}
         /** Lifecycle callback for loading complete. */
-        onLoaded(): void { }
+        onLoaded(): void {}
         /** Lifecycle callback for loading errored. */
-        onErrored(): void { }
+        onErrored(): void {}
     };
 export type BasicScriptMixin = Mixin<typeof BasicScriptMixin>;
 
 /** Builder for BasicScript */
-export const BasicScriptBuilder = (Base = class BasicScript {}): Constructor<BasicScriptMixin> => BasicScriptMixin(Base);
+export const BasicScriptBuilder = (Base = class BasicScript {}): Constructor<BasicScriptMixin> =>
+    BasicScriptMixin(Base);
 
 /**
  * Basic script loading class without an asynchronous queueing api.
