@@ -1,7 +1,9 @@
 import { Constructor, Mixin } from './types';
-import { loadScript } from './utilities/loadScript';
+import { loadScriptElement } from './utilities/loadScriptElement';
+import { createScriptElement } from './utilities/createScriptElement';
 import { isValidSrc } from './utilities/isValidSrc';
 import { contextualError } from './utilities/contextualError';
+import { contextualWarning } from './utilities/contextualWarning';
 
 /**
  * @typedef {Object} BasicScriptState
@@ -45,15 +47,16 @@ export const BasicScriptMixin = <TBase extends Constructor>(Base: TBase) =>
                 // If the first argument has a src attribute
                 if (arg1.src && typeof arg1.src == 'string') {
                     // Set the src
-                    this.src = arg1.src;
+                    this._src = arg1.src;
                 }
                 // Or if the first argument IS a valid src
                 if (typeof arg1 === 'string' && isValidSrc(arg1)) {
                     // Set the src
-                    this.src = arg1;
+                    this._src = arg1;
                 }
             }
-            //TODO: create script element here
+            // Create the script HTML node
+            this.htmlElement = createScriptElement(this._src);
         }
         /**
          * Custom error namespace.
@@ -63,20 +66,35 @@ export const BasicScriptMixin = <TBase extends Constructor>(Base: TBase) =>
          * @type {string}
          */
         _errorNamespace: string = 'BasicScript';
+
+        /**
+         * Script source as a URL string.
+         *
+         * @protected
+         * @property
+         * @type {string}
+         */
+        _src: string = '';
+
         /**
          * Array to store dependencies that should load with this script
+         *
          * @property
          * @type {BasicScript[]}
          */
         _softDependencies: BasicScript[] = [];
         /**
          * Array to store hard dependencies that should load before this script
+         *
+         * @protected
          * @property
          * @type {BasicScript[]}
          */
         _hardDependencies: BasicScript[] = [];
         /**
          * Array to store loading promise of dependency scripts
+         *
+         * @protected
          * @property
          * @type {Promise<BasicScript>[]}
          */
@@ -90,6 +108,7 @@ export const BasicScriptMixin = <TBase extends Constructor>(Base: TBase) =>
          * @type {(Promise<this>?)} Promise that will resolve with this instance when loading is complete.
          */
         _loadingPromise: Promise<this> | null = null;
+
         /**
          * Internal script loading state.
          *
@@ -179,28 +198,47 @@ export const BasicScriptMixin = <TBase extends Constructor>(Base: TBase) =>
         }
 
         /**
+         * Script HTML node.
+         * @type {HTMLScriptElement}
+         */
+        htmlElement: HTMLScriptElement;
+        
+        /**
          * Script source as a URL string.
          * @type {string}
          */
-        src: string = '';
+        get src(): string {
+            return this._src;
+        }
+        set src(src: string) {
+            // Make sure the script has not been loaded
+            if (this.isLoaded || this.isLoading) {
+                contextualWarning('Cannot change "src" of a script that has already been loaded.', this._errorNamespace);
+                return;
+            }
+            // If the script has not been loaded then change the source.
+            this._src = src;
+            this.htmlElement.src = this._src;
+        }
+
         /**
          * Is the script enabled (disabled scripts will not load).
          * @readonly
          * @type {boolean}
          */
-
         get isEnabled(): boolean {
             return this._state.enabled;
         }
+
         /**
          * Has the script finished loading.
          * @readonly
          * @type {boolean}
          */
-
         get isLoaded(): boolean {
             return this._state.loaded;
         }
+
         /**
          * Is the script loading.
          * @readonly
@@ -280,13 +318,14 @@ export const BasicScriptMixin = <TBase extends Constructor>(Base: TBase) =>
          * @returns {Promise<this>} A promise that resolves with the instance once loading is complete or rejects if loading fails.
          */
         async load(): Promise<this> {
-            // If the script is disabled reject.
-            if (!this.isEnabled) {
-                throw contextualError(`Could not load disabled script. \n ${this.src}`, this._errorNamespace);
-            }
-
             // If the script has already loaded return straight away.
             if (this.isLoaded) {
+                return this;
+            }
+
+            // If the script is disabled reject.
+            if (!this.isEnabled) {
+                contextualWarning(`Could not load disabled script. \n ${this.src}`, this._errorNamespace);
                 return this;
             }
 
@@ -312,7 +351,7 @@ export const BasicScriptMixin = <TBase extends Constructor>(Base: TBase) =>
                             await this._loadDependencies();
 
                             // Load the script
-                            await loadScript(this.src);
+                            await loadScriptElement(this.htmlElement);
                         } catch (err) {
                             // Flag the script as errored
                             await this._scriptError();

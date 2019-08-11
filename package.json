@@ -1,6 +1,6 @@
 {
   "name": "script-loading-toolkit",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "A browser library for handling asynchronously loading and interacting with external script dependencies with promises. Written in TypeScript.",
   "main": "dist/index.js",
   "module": "dist/index.es.js",
@@ -44,6 +44,7 @@
     "@types/express": "^4.16.1",
     "@types/jest": "^24.0.11",
     "@types/jsdom": "^12.2.3",
+    "@types/sinon": "^7.0.13",
     "@typescript-eslint/eslint-plugin": "^1.6.0",
     "@typescript-eslint/parser": "^1.6.0",
     "coveralls": "^3.0.3",
@@ -57,6 +58,7 @@
     "rollup-plugin-node-resolve": "^4.2.3",
     "rollup-plugin-terser": "^4.0.4",
     "rollup-plugin-typescript2": "^0.20.1",
+    "sinon": "^7.4.1",
     "ts-jest": "^24.0.2",
     "typescript": "^3.4.1"
   },

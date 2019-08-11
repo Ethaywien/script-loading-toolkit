@@ -124,11 +124,8 @@ You can disable a script from loading, or re enable it with the `.disable()` and
 
 ```js
 myScript.disable();
-try {
-    await myScript.load();
-} catch (err) {
-    console.log(err); // > Could not load disabled script. 
-}
+await myScript.load(); // Console Warning > Could not load disabled script.
+console.log(myScript.isLoaded) // > false
 ```
 
 #### Queueing
@@ -262,6 +259,7 @@ The following properties are available on `Script` instances:
 | Property         | Type    | Default | Description                                                                 |
 | ---------------- | ------- | ------- | --------------------------------------------------------------------------- |
 | .src             | string  | `""`    | URL of the script to load, including protocol (//, http://, https://, etc). |
+| .htmlElement | HTMLScriptElement | `new HTMLScriptElement()` | HTML element for the script that will be added to the DOM on loading. |
 | .isEnabled       | boolean | `true`  | True if loading this script is enabled.                                     |
 | .isLoading       | boolean | `false` | True if the script is currently loading.                                    |
 | .isLoaded        | boolean | `false` | True if the script has finished loading without error.                      |
@@ -335,6 +333,7 @@ acmeScript.load().then(() => {
 | Property | Type | Default | Description |
 | --- | --- | --- | --- |
 | .src | string | `""` | URL of the script to load, including protocol (//, http://, https://, etc). |
+| .htmlElement | HTMLScriptElement | `new HTMLScriptElement()` | HTML element for the script that will be added to the DOM on loading. |
 | .isEnabled | boolean | `true` | True if loading this script is enabled. |
 | .isLoading | boolean | `false` | True if the script is currently loading. |
 | .isLoaded | boolean | `false` | True if the script has finished loading without error. |

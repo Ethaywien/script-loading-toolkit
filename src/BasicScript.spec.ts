@@ -1,17 +1,20 @@
-import { mocked } from 'ts-jest/utils';
 import { BasicScriptMixin, BasicScript, BasicScriptBuilder } from './BasicScript';
 import { Script } from './Script';
-import { loadScript } from './utilities/loadScript';
+import { loadScriptElement } from './utilities/loadScriptElement';
+import { mocked } from 'ts-jest/utils';
+import { contextualWarning } from './utilities/contextualWarning';
 import { testSources } from '../test/globals';
 
-jest.mock('./utilities/loadScript');
+jest.mock('./utilities/loadScriptElement');
+jest.mock('./utilities/contextualWarning');
 
 const { validSrc, notFoundSrc } = testSources;
 
 afterEach(
     (): void => {
         window.testScriptLoaded = false;
-        mocked(loadScript).mockClear();
+        mocked(loadScriptElement).mockClear();
+        mocked(contextualWarning).mockClear();
     },
 );
 
@@ -75,6 +78,33 @@ describe('BasicScript', (): void => {
             it('Is not set to the first constructor argument if it is not a valid string src.', (): void => {
                 const testInstance = new BasicScript('invalid');
                 expect(testInstance.src).toBe('');
+            });
+        });
+
+        describe('#htmlElement', (): void => {
+            it('Is an HTMLScriptElement.', (): void => {
+                const testInstance = new BasicScript();
+                expect(testInstance.htmlElement).toBeInstanceOf(HTMLScriptElement);
+            });
+            it('Is asynchronous.', (): void => {
+                const testInstance = new BasicScript();
+                expect(testInstance.htmlElement.async).toBe(true);
+            });
+            it('Has the src provided to the constructor.', (): void => {
+                const testInstance = new BasicScript(validSrc);
+                expect(testInstance.htmlElement.src).toBe(testInstance.src);
+            });
+            it('Is not added to the DOM.', (): void => {
+                new BasicScript(validSrc);
+                const scripts = document.getElementsByTagName('script');
+                expect(scripts.length).toBe(0);
+            });
+            it('Updates it\'s src if the instance src has changed.', (): void => {
+                const testInstance = new BasicScript(validSrc);
+                testInstance.src = `${validSrc}123`
+                expect(testInstance.htmlElement.src).toBe(testInstance.src);
+                testInstance.src = `${validSrc}abcd`
+                expect(testInstance.htmlElement.src).toBe(testInstance.src);
             });
         });
 
@@ -193,9 +223,11 @@ describe('BasicScript', (): void => {
         });
 
         describe('#load()', (): void => {
-            it('Rejects if the script is disabled.', (): void => {
+            it('Does not reject and gives a warning if the script is disabled.', async (): Promise<void> => {
                 testInstance.disable();
-                expect(testInstance.load()).rejects.toThrowError(/disabled script/);
+                await testInstance.load();
+                expect(contextualWarning).toBeCalledTimes(1);
+                expect(testInstance.isLoaded).toBe(false);
             });
             it('Rejects if no src has been specified.', (): void => {
                 testInstance.src = '';
@@ -214,7 +246,6 @@ describe('BasicScript', (): void => {
             });
             it('Resolves with itself when loading is complete.', async (): Promise<void> => {
                 await expect(testInstance.load()).resolves.toBe(testInstance);
-                expect(window.testScriptLoaded).toBe(true);
             });
             it('Changes status to loaded when complete.', async (): Promise<void> => {
                 await testInstance.load();
@@ -235,17 +266,17 @@ describe('BasicScript', (): void => {
                 void
             > => {
                 await Promise.all([testInstance.load(), testInstance.load()]);
-                expect(loadScript).toBeCalledTimes(1);
+                expect(loadScriptElement).toBeCalledTimes(1);
             });
             it('Resolves and does not try to load again if already loaded.', async (): Promise<void> => {
                 await testInstance.load();
-                expect(loadScript).toBeCalledTimes(1);
+                expect(loadScriptElement).toBeCalledTimes(1);
                 expect(testInstance.isLoaded).toBe(true);
                 testInstance.src = '';
                 const loading = testInstance.load();
                 expect(testInstance.isLoading).toBe(false);
                 await loading;
-                expect(loadScript).toBeCalledTimes(1);
+                expect(loadScriptElement).toBeCalledTimes(1);
             });
             it('Will trigger loading of added dependencies.', async (): Promise<void> => {
                 const testDependency = new BasicScript();
@@ -254,7 +285,13 @@ describe('BasicScript', (): void => {
                 testInstance.addDependency(testDependency);
                 await testInstance.load();
                 expect(testSpy).toBeCalledTimes(1);
-                expect(loadScript).toBeCalledTimes(2);
+                expect(loadScriptElement).toBeCalledTimes(2);
+            });
+            it('Prevents changing the src attribute once loading has completed.', async (): Promise<void> => {
+                await testInstance.load();
+                testInstance.src = '123'
+                expect(testInstance.src).not.toBe('123');
+                expect(contextualWarning).toBeCalledTimes(1);
             });
         });
     });
@@ -383,8 +420,8 @@ describe('BasicScript', (): void => {
             testInstance.load();
             setTimeout(async (): Promise<void> => {
                 expect(testSpy).toBeCalledTimes(1);
-                expect(loadScript).toBeCalledWith(validSrc);
-                expect(loadScript).toBeCalledTimes(1);
+                expect(loadScriptElement).toBeCalledWith(testInstance.htmlElement);
+                expect(loadScriptElement).toBeCalledTimes(1);
                 testResolver();
                 await testInstance.load();
                 done();
@@ -410,10 +447,10 @@ describe('BasicScript', (): void => {
             testInstance.addDependency(testDependency, true);
             testInstance.load();
             setTimeout(async (): Promise<void> => {
-                expect(loadScript).toBeCalledTimes(0);
+                expect(loadScriptElement).toBeCalledTimes(0);
                 testResolver();
                 await testInstance.load();
-                expect(loadScript).toBeCalledTimes(1);
+                expect(loadScriptElement).toBeCalledTimes(1);
                 done();
             }, 10);
         });

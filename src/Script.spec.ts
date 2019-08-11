@@ -3,7 +3,7 @@ import { BasicScriptMixin } from './BasicScript';
 import { FunctionQueueMixin } from './FunctionQueue';
 import { testSources } from '../test/globals';
 
-jest.mock('./utilities/loadScript');
+jest.mock('./utilities/loadScriptElement');
 
 const { validSrc, notFoundSrc } = testSources;
 
@@ -13,6 +13,11 @@ describe('ScriptInitializerMixin', (): void => {
         const testFnc = () => ScriptInitializerMixin(MixedInTestClass);
         expect(testFnc).not.toThrowError();
     });
+    it('Errors if no constructor is passed.', (): void => {
+        // @ts-ignore: Suppress error to test.
+        const testFnc = () => ScriptInitializerMixin();
+        expect(testFnc).toThrowError();
+    });
     it('Adds Script initialization functionality to given constructor.', (): void => {
         class TestClass {
             public static testProp: string = 'test';
@@ -20,6 +25,7 @@ describe('ScriptInitializerMixin', (): void => {
         const MixedInTestClass = BasicScriptMixin(FunctionQueueMixin(TestClass));
         const TestMixinClass = ScriptInitializerMixin(MixedInTestClass);
         expect(TestMixinClass.testProp).toBe('test');
+        expect(typeof TestMixinClass).toBe('function');
         expect(typeof TestMixinClass.prototype.initialize).toBe('function');
     });
     it('Returned object can be newed.', (): void => {
