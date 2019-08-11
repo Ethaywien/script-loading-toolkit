@@ -32,12 +32,6 @@ describe('loadScript', (): void => {
         expect(window.testScriptLoaded).toBe(true);
     });
     it('Rejects on error.', async (): Promise<void> => {
-        Object.defineProperty(HTMLScriptElement.prototype, 'src', {
-            set: function (source: string): string {
-                setTimeout((): void => this.onerror(new Error('error')));
-                return source;
-            }
-        });
         documentHeadStub.restore();
         documentHeadStub = sinon.stub(document.head, 'appendChild').callsFake((script: Node): Node => {
             // @ts-ignore: Suprress mock implementation error

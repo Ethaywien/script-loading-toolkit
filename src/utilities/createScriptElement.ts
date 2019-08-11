@@ -7,7 +7,7 @@
 export function createScriptElement(src?: string): HTMLScriptElement {
     const _script: HTMLScriptElement = document.createElement('script');
     _script.type = 'text/javascript';
-    _script.src = src || '';
+    _script.src = src ? src : '';
     _script.async = true;
     return _script;
 }
