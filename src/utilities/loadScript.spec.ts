@@ -14,7 +14,7 @@ describe('loadScript', (): void => {
             script.onload();
             window.testScriptLoaded = true;
             return script;
-        })
+        });
     });
     afterEach((): void => {
         documentHeadStub.restore();
