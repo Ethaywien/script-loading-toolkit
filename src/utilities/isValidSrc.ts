@@ -5,5 +5,5 @@
  * @returns {boolean}
  */
 export function isValidSrc(src: string): boolean {
-    return /^(?:https?\:)?\/\/\S+\.\S+$/s.test(src);
+    return /^(?:https?\:)?\/\/\S+\.\S+$/.test(src);
 }
